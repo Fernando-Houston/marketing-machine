@@ -129,6 +129,34 @@ const templates: Template[] = [
     rating: 4.4,
     createdAt: '2025-01-15T10:00:00Z',
     updatedAt: '2025-01-15T10:00:00Z'
+  },
+  {
+    id: '9',
+    name: 'Houston Market Forecast Analysis',
+    description: 'Comprehensive quarterly and annual market forecast for Houston real estate with data-driven predictions',
+    category: 'Market Trends',
+    prompt: 'Create a detailed Houston real estate market forecast covering next quarter and annual projections. Include housing inventory trends, price appreciation forecasts, demographic shifts, job market impact, new construction pipeline, and investment opportunities. Use current market data to project buyer/seller market conditions.',
+    variables: ['forecast_period', 'market_segment', 'price_projections', 'inventory_trends', 'economic_factors'],
+    isPremium: true,
+    tags: ['market-forecast', 'predictions', 'data-analysis', 'trends', 'houston-market'],
+    useCount: 45,
+    rating: 4.7,
+    createdAt: '2025-01-15T12:00:00Z',
+    updatedAt: '2025-01-15T12:00:00Z'
+  },
+  {
+    id: '10',
+    name: 'Federal Reserve Interest Rate Impact',
+    description: 'Expert analysis of Fed rate changes on Houston real estate market and buyer/investor strategies',
+    category: 'Economic Analysis',
+    prompt: 'Analyze current Federal Reserve interest rate policies and their direct impact on Houston real estate market. Cover mortgage rate trends, buyer affordability, refinancing opportunities, investment property cash flow effects, and strategic timing for purchases/sales. Include actionable advice for different buyer types.',
+    variables: ['current_fed_rate', 'rate_direction', 'mortgage_impact', 'market_segment', 'investor_type'],
+    isPremium: true,
+    tags: ['fed-rates', 'interest-rates', 'mortgage-rates', 'economic-impact', 'investment-strategy'],
+    useCount: 38,
+    rating: 4.8,
+    createdAt: '2025-01-15T12:00:00Z',
+    updatedAt: '2025-01-15T12:00:00Z'
   }
 ];
 

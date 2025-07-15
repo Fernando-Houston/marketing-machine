@@ -156,7 +156,9 @@ export default function Home() {
     { value: 'houston_growth', label: 'Houston Growth Story', icon: '🚀', color: 'indigo' },
     { value: 'social_post', label: 'Social Media Post', icon: '📱', color: 'pink' },
     { value: 'buyer_guide', label: 'First-Time Buyer Guide', icon: '🏠', color: 'teal' },
-    { value: 'seller_tips', label: 'Seller Tips', icon: '📋', color: 'cyan' }
+    { value: 'seller_tips', label: 'Seller Tips', icon: '📋', color: 'cyan' },
+    { value: 'market_forecast', label: 'Market Forecast', icon: '🔮', color: 'violet' },
+    { value: 'fed_rates', label: 'Fed Interest Rates', icon: '🏦', color: 'emerald' }
   ];
 
   const platforms = [
@@ -324,7 +326,8 @@ export default function Home() {
       'Market Analysis': 'market_analysis',
       'Investment Opportunity': 'investment_opportunity',
       'Neighborhood Spotlight': 'neighborhood_spotlight',
-      'Market Trends': 'houston_growth',
+      'Market Trends': 'market_forecast',
+      'Economic Analysis': 'fed_rates',
       'Social Media': 'social_post',
       'Buyer Education': 'buyer_guide',
       'Seller Education': 'seller_tips'
