@@ -1,0 +1,180 @@
+
+> houston-marketing-machine@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
+   ▲ Next.js 15.4.1 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://172.30.26.35:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 895ms
+ ○ Compiling /api/content/generate ...
+ ✓ Compiled /api/content/generate in 805ms
+ ⨯ ./src/lib/ai/openai.ts:2:1
+Module not found: Can't resolve '@/lib/config'
+[0m [90m 1 |[39m [36mimport[39m [33mOpenAI[39m [36mfrom[39m [32m'openai'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { config } [36mfrom[39m [32m'@/lib/config'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mconst[39m openai [33m=[39m [36mnew[39m [33mOpenAI[39m({[0m
+
+Import map: aliased to relative './src/lib/config' inside of [project]/
+
+
+Import trace:
+  ./src/lib/ai/openai.ts
+  ./src/lib/services/contentGeneration.ts
+  ./src/app/api/content/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./src/lib/ai/replicate.ts:2:1
+Module not found: Can't resolve '@/lib/config'
+[0m [90m 1 |[39m [36mimport[39m [33mReplicate[39m [36mfrom[39m [32m'replicate'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { config } [36mfrom[39m [32m'@/lib/config'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mconst[39m replicate [33m=[39m [36mnew[39m [33mReplicate[39m({[0m
+
+Import map: aliased to relative './src/lib/config' inside of [project]/
+
+
+Import trace:
+  ./src/lib/ai/replicate.ts
+  ./src/lib/services/contentGeneration.ts
+  ./src/app/api/content/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./src/app/api/content/generate/route.ts:3:1
+Module not found: Can't resolve '@/lib/logger'
+[0m [90m 1 |[39m [36mimport[39m { [33mNextRequest[39m[33m,[39m [33mNextResponse[39m } [36mfrom[39m [32m'next/server'[39m[33m;[39m
+ [90m 2 |[39m [36mimport[39m { generateContent } [36mfrom[39m [32m'@/lib/services/contentGeneration'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mexport[39m [36masync[39m [36mfunction[39m [33mPOST[39m(request[33m:[39m [33mNextRequest[39m) {
+ [90m 6 |[39m   [36mtry[39m {[0m
+
+Import map: aliased to relative './src/lib/logger' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./src/lib/ai/openai.ts:3:1
+Module not found: Can't resolve '@/lib/logger'
+[0m [90m 1 |[39m [36mimport[39m [33mOpenAI[39m [36mfrom[39m [32m'openai'[39m[33m;[39m
+ [90m 2 |[39m [36mimport[39m { config } [36mfrom[39m [32m'@/lib/config'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mconst[39m openai [33m=[39m [36mnew[39m [33mOpenAI[39m({
+ [90m 6 |[39m   apiKey[33m:[39m config[33m.[39mapis[33m.[39mopenai[33m,[39m[0m
+
+Import map: aliased to relative './src/lib/logger' inside of [project]/
+
+
+Import trace:
+  ./src/lib/ai/openai.ts
+  ./src/lib/services/contentGeneration.ts
+  ./src/app/api/content/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./src/lib/ai/replicate.ts:3:1
+Module not found: Can't resolve '@/lib/logger'
+[0m [90m 1 |[39m [36mimport[39m [33mReplicate[39m [36mfrom[39m [32m'replicate'[39m[33m;[39m
+ [90m 2 |[39m [36mimport[39m { config } [36mfrom[39m [32m'@/lib/config'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mconst[39m replicate [33m=[39m [36mnew[39m [33mReplicate[39m({
+ [90m 6 |[39m   auth[33m:[39m config[33m.[39mapis[33m.[39mreplicate[33m,[39m[0m
+
+Import map: aliased to relative './src/lib/logger' inside of [project]/
+
+
+Import trace:
+  ./src/lib/ai/replicate.ts
+  ./src/lib/services/contentGeneration.ts
+  ./src/app/api/content/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./src/lib/services/contentGeneration.ts:3:1
+Module not found: Can't resolve '@/lib/logger'
+[0m [90m 1 |[39m [36mimport[39m { generateHoustonContent } [36mfrom[39m [32m'@/lib/ai/replicate'[39m[33m;[39m
+ [90m 2 |[39m [36mimport[39m { generateHoustonContentBackup } [36mfrom[39m [32m'@/lib/ai/openai'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { logger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mexport[39m [36minterface[39m [33mContentGenerationRequest[39m {
+ [90m 6 |[39m   topic[33m:[39m string[33m;[39m[0m
+
+Import map: aliased to relative './src/lib/logger' inside of [project]/
+
+
+Import trace:
+  ./src/lib/services/contentGeneration.ts
+  ./src/app/api/content/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 579ms
+ POST /api/content/generate 500 in 1490ms
+[INFO] 2025-07-15T08:41:56.599Z - Content generation request received {
+  topic: 'Houston Heights real estate investment',
+  contentType: 'market_update',
+  platform: 'instagram'
+}
+[INFO] 2025-07-15T08:41:56.600Z - Starting content generation {
+  topic: 'Houston Heights real estate investment',
+  contentType: 'market_update',
+  platform: 'instagram'
+}
+[INFO] 2025-07-15T08:41:56.600Z - Generating content with Replicate {
+  prompt: 'You are a Houston real estate expert writing market_update content about Houston Heights real estate'
+}
+[SUCCESS] 2025-07-15T08:42:06.617Z - Content generated successfully via Replicate 
+[SUCCESS] 2025-07-15T08:42:06.618Z - Content generated via Replicate 
+[SUCCESS] 2025-07-15T08:42:06.618Z - Content generated successfully {
+  topic: 'Houston Heights real estate investment',
+  generatedBy: 'replicate'
+}
+ POST /api/content/generate 200 in 10145ms
+[INFO] 2025-07-15T08:42:28.274Z - Content generation request received {
+  topic: 'Montrose neighborhood investment opportunity',
+  contentType: 'investment_opportunity',
+  platform: 'linkedin'
+}
+[INFO] 2025-07-15T08:42:28.274Z - Starting content generation {
+  topic: 'Montrose neighborhood investment opportunity',
+  contentType: 'investment_opportunity',
+  platform: 'linkedin'
+}
+[INFO] 2025-07-15T08:42:28.274Z - Generating content with Replicate {
+  prompt: 'You are a Houston real estate expert writing investment_opportunity content about Montrose neighborh'
+}
+[SUCCESS] 2025-07-15T08:42:37.497Z - Content generated successfully via Replicate 
+[SUCCESS] 2025-07-15T08:42:37.497Z - Content generated via Replicate 
+[SUCCESS] 2025-07-15T08:42:37.497Z - Content generated successfully {
+  topic: 'Montrose neighborhood investment opportunity',
+  generatedBy: 'replicate'
+}
+ POST /api/content/generate 200 in 9245ms
