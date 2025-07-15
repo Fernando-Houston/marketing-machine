@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Send, Copy, Save, RefreshCw, TrendingUp, Clock, Users, Sparkles, Download, Trash2, Search, Filter, Star, Calendar, BarChart3, Settings, Image, Target, Zap, Award, DollarSign, MapPin, Building2, TrendingDown, Plus, Eye } from 'lucide-react';
+import Image from 'next/image';
+import { Copy, Save, RefreshCw, TrendingUp, Users, Sparkles, Download, Trash2, Search, Star, Calendar, BarChart3, Target, Zap, Award, DollarSign, Building2, Plus, Eye } from 'lucide-react';
 
 interface ContentItem {
   id: string;
@@ -34,12 +35,78 @@ interface Template {
   updatedAt: string;
 }
 
+interface GeneratedContent {
+  content: string;
+  topic: string;
+  contentType: string;
+  platform: string;
+  generatedBy: string;
+  timestamp: string;
+}
+
+interface GeneratedImage {
+  url: string;
+  prompt: string;
+  type: string;
+  style: string;
+  quality: string;
+  aspectRatio: string;
+  timestamp: string;
+  metadata: {
+    model: string;
+    width: number;
+    height: number;
+    steps: number;
+  };
+}
+
+interface UploadedImage {
+  url: string;
+  originalName: string;
+  size: number;
+  type: string;
+  timestamp: string;
+  metadata: {
+    format: string;
+  };
+}
+
+interface GeneratedDocument {
+  content: string;
+  title: string;
+  type: string;
+  timestamp: string;
+  url: string;
+  downloadUrl?: string;
+}
+
+interface DocumentData {
+  area?: string;
+  timeframe?: string;
+  includeCharts?: boolean;
+  customData?: Record<string, unknown>;
+}
+
+interface GeneratedVideo {
+  url: string;
+  prompt: string;
+  type: string;
+  style: string;
+  duration: number;
+  aspectRatio: string;
+  timestamp: string;
+  metadata: {
+    duration: number;
+    fps: number;
+  };
+}
+
 export default function Home() {
   const [topic, setTopic] = useState('');
   const [contentType, setContentType] = useState('');
   const [platform, setPlatform] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<any>(null);
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [contentHistory, setContentHistory] = useState<ContentItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlatform, setFilterPlatform] = useState('');
@@ -49,27 +116,27 @@ export default function Home() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [generatedImage, setGeneratedImage] = useState<any>(null);
+  const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageType, setImageType] = useState('property');
   const [imageStyle, setImageStyle] = useState('luxury');
   const [imageRatio, setImageRatio] = useState('16:9');
   const [imageQuality, setImageQuality] = useState('standard');
   const [showImageUpload, setShowImageUpload] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<any>(null);
+  const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
   // Document generation states
-  const [generatedDocument, setGeneratedDocument] = useState<any>(null);
+  const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
   const [documentType, setDocumentType] = useState('market_report');
   const [documentTitle, setDocumentTitle] = useState('');
-  const [documentData, setDocumentData] = useState<any>({});
+  const [documentData, setDocumentData] = useState<DocumentData>({});
   const [includeCharts, setIncludeCharts] = useState(true);
   const [houstonArea, setHoustonArea] = useState('');
   
   // Video generation states
-  const [generatedVideo, setGeneratedVideo] = useState<any>(null);
+  const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const [videoPrompt, setVideoPrompt] = useState('');
   const [videoType, setVideoType] = useState('property_tour');
   const [videoStyle, setVideoStyle] = useState('professional');
@@ -248,7 +315,7 @@ export default function Home() {
     }
   };
 
-  const useTemplate = (template: Template) => {
+  const selectTemplate = (template: Template) => {
     setSelectedTemplate(template);
     setTopic(template.prompt.replace(/\{[^}]*\}/g, ''));
     
@@ -459,7 +526,7 @@ export default function Home() {
     }
   };
 
-  const handleQuickAction = (action: any) => {
+  const handleQuickAction = (action: { topic: string; type: string; platform: string }) => {
     setTopic(action.topic);
     setContentType(action.type);
     setPlatform(action.platform);
@@ -971,9 +1038,11 @@ export default function Home() {
                     </div>
                     
                     <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50 mb-4">
-                      <img 
+                      <Image 
                         src={generatedImage.url} 
                         alt="Generated Houston real estate image"
+                        width={800}
+                        height={600}
                         className="w-full h-auto rounded-lg shadow-lg"
                       />
                     </div>
@@ -1036,9 +1105,11 @@ export default function Home() {
                     </div>
                     
                     <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50 mb-4">
-                      <img 
+                      <Image 
                         src={uploadedImage.url} 
                         alt={uploadedImage.originalName}
+                        width={800}
+                        height={600}
                         className="w-full h-auto rounded-lg shadow-lg"
                       />
                     </div>
@@ -1184,7 +1255,7 @@ export default function Home() {
                              {template.variables.length} variables
                            </div>
                            <button
-                             onClick={() => useTemplate(template)}
+                             onClick={() => selectTemplate(template)}
                              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                                template.isPremium
                                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30 hover:bg-yellow-500/30'
