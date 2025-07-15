@@ -59,6 +59,25 @@ export default function Home() {
   const [uploadedImage, setUploadedImage] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Document generation states
+  const [generatedDocument, setGeneratedDocument] = useState<any>(null);
+  const [documentType, setDocumentType] = useState('market_report');
+  const [documentTitle, setDocumentTitle] = useState('');
+  const [documentData, setDocumentData] = useState<any>({});
+  const [includeCharts, setIncludeCharts] = useState(true);
+  const [houstonArea, setHoustonArea] = useState('');
+  
+  // Video generation states
+  const [generatedVideo, setGeneratedVideo] = useState<any>(null);
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [videoType, setVideoType] = useState('property_tour');
+  const [videoStyle, setVideoStyle] = useState('professional');
+  const [videoRatio, setVideoRatio] = useState('16:9');
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoQuality, setVideoQuality] = useState('standard');
+  const [propertyType, setPropertyType] = useState('residential');
+  const [videoInputImage, setVideoInputImage] = useState('');
 
   const contentTypes = [
     { value: 'market_update', label: 'Market Update', icon: '📊', color: 'blue' },
@@ -340,6 +359,74 @@ export default function Home() {
     }
   };
 
+  // Document generation handler
+  const handleDocumentGenerate = async () => {
+    if (!documentTitle) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/documents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          type: documentType,
+          title: documentTitle,
+          data: {
+            ...documentData,
+            medianPrice: '$485,000',
+            priceGrowth: '+12.5%',
+            inventory: '2.8',
+            salesVolume: '8,547'
+          },
+          includeCharts,
+          houstonArea
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setGeneratedDocument(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to generate document:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Video generation handler
+  const handleVideoGenerate = async () => {
+    if (!videoPrompt) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/videos/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          type: videoType,
+          prompt: videoPrompt,
+          inputImage: videoInputImage || undefined,
+          duration: videoDuration,
+          style: videoStyle,
+          aspectRatio: videoRatio,
+          quality: videoQuality,
+          houstonArea,
+          propertyType
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setGeneratedVideo(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to generate video:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Filter content history based on search and filters
   const filteredHistory = contentHistory.filter(item => {
     const matchesSearch = item.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -491,6 +578,8 @@ export default function Home() {
               <nav className="flex space-x-4">
                 {[
                   { id: 'generate', label: 'Generate', icon: Zap },
+                  { id: 'documents', label: 'Documents', icon: Download },
+                  { id: 'videos', label: 'Videos', icon: Target },
                   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
                   { id: 'calendar', label: 'Calendar', icon: Calendar },
                   { id: 'templates', label: 'Templates', icon: Star }
@@ -1196,6 +1285,263 @@ export default function Home() {
                      <p className="text-green-300 mb-4">Deep insights into your Houston real estate marketing performance</p>
                      <p className="text-slate-400 text-sm">• Lead attribution tracking<br/>• Revenue per content piece<br/>• Houston market correlation analysis</p>
                    </div>
+                 </div>
+               </div>
+             )}
+
+             {/* Documents Tab */}
+             {activeTab === 'documents' && (
+               <div className="bg-black/30 backdrop-blur-xl border border-orange-500/20 rounded-2xl p-8 shadow-2xl">
+                 <div className="flex justify-between items-center mb-8">
+                   <div>
+                     <h2 className="text-2xl font-bold text-white">Document Generation</h2>
+                     <p className="text-orange-300">Create professional PDF reports and brochures</p>
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                   <div className="space-y-6">
+                     <div>
+                       <label className="block text-sm font-semibold text-orange-300 mb-3">Document Title</label>
+                       <input
+                         type="text"
+                         value={documentTitle}
+                         onChange={(e) => setDocumentTitle(e.target.value)}
+                         placeholder="Enter document title..."
+                         className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white placeholder-orange-400/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                       />
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                         <label className="block text-sm font-semibold text-orange-300 mb-3">Document Type</label>
+                         <select
+                           value={documentType}
+                           onChange={(e) => setDocumentType(e.target.value)}
+                           className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         >
+                           <option value="market_report" className="bg-slate-800">📊 Market Report</option>
+                           <option value="property_brochure" className="bg-slate-800">🏠 Property Brochure</option>
+                           <option value="investment_analysis" className="bg-slate-800">💰 Investment Analysis</option>
+                           <option value="marketing_flyer" className="bg-slate-800">📄 Marketing Flyer</option>
+                         </select>
+                       </div>
+
+                       <div>
+                         <label className="block text-sm font-semibold text-orange-300 mb-3">Houston Area</label>
+                         <input
+                           type="text"
+                           value={houstonArea}
+                           onChange={(e) => setHoustonArea(e.target.value)}
+                           placeholder="e.g., The Woodlands, Houston Heights..."
+                           className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white placeholder-orange-400/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         />
+                       </div>
+                     </div>
+
+                     <div className="flex items-center space-x-3">
+                       <input
+                         type="checkbox"
+                         id="includeCharts"
+                         checked={includeCharts}
+                         onChange={(e) => setIncludeCharts(e.target.checked)}
+                         className="w-5 h-5 text-orange-400 bg-orange-900/20 border-orange-500/30 rounded focus:ring-orange-400"
+                       />
+                       <label htmlFor="includeCharts" className="text-orange-300 font-medium">
+                         Include financial charts and graphs
+                       </label>
+                     </div>
+
+                     <button
+                       onClick={handleDocumentGenerate}
+                       disabled={!documentTitle || isGenerating}
+                       className="w-full text-white py-4 px-8 rounded-xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 hover:from-orange-600 hover:via-red-600 hover:to-orange-700"
+                     >
+                       {isGenerating ? (
+                         <>
+                           <RefreshCw className="w-6 h-6 animate-spin" />
+                           <span>Generating Professional Document...</span>
+                         </>
+                       ) : (
+                         <>
+                           <Download className="w-6 h-6" />
+                           <span>Generate Premium Document</span>
+                         </>
+                       )}
+                     </button>
+                   </div>
+
+                   {generatedDocument && (
+                     <div className="bg-orange-900/20 rounded-xl p-6 border border-orange-500/30">
+                       <h3 className="text-xl font-bold text-white mb-4">Generated Document</h3>
+                       <div className="space-y-4">
+                         <div className="bg-slate-900/50 rounded-lg p-4">
+                           <p className="text-orange-300 font-medium">{generatedDocument.title}</p>
+                           <p className="text-slate-400 text-sm">{generatedDocument.type}</p>
+                         </div>
+                         <div className="flex space-x-3">
+                           <button 
+                             onClick={() => window.open(generatedDocument.url, '_blank')}
+                             className="flex-1 px-4 py-2 bg-orange-500/20 text-orange-300 rounded-xl hover:bg-orange-500/30 border border-orange-400/30 flex items-center justify-center space-x-2 transition-all duration-200"
+                           >
+                             <Download className="w-4 h-4" />
+                             <span>Download PDF</span>
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               </div>
+             )}
+
+             {/* Videos Tab */}
+             {activeTab === 'videos' && (
+               <div className="bg-black/30 backdrop-blur-xl border border-pink-500/20 rounded-2xl p-8 shadow-2xl">
+                 <div className="flex justify-between items-center mb-8">
+                   <div>
+                     <h2 className="text-2xl font-bold text-white">AI Video Generation</h2>
+                     <p className="text-pink-300">Create stunning property tour videos and market animations</p>
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                   <div className="space-y-6">
+                     <div>
+                       <label className="block text-sm font-semibold text-pink-300 mb-3">Video Description</label>
+                       <input
+                         type="text"
+                         value={videoPrompt}
+                         onChange={(e) => setVideoPrompt(e.target.value)}
+                         placeholder="Describe the video you want to create..."
+                         className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white placeholder-pink-400/50 focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                       />
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                         <label className="block text-sm font-semibold text-pink-300 mb-3">Video Type</label>
+                         <select
+                           value={videoType}
+                           onChange={(e) => setVideoType(e.target.value)}
+                           className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         >
+                           <option value="property_tour" className="bg-slate-800">🏠 Property Tour</option>
+                           <option value="market_animation" className="bg-slate-800">📊 Market Animation</option>
+                           <option value="showcase_video" className="bg-slate-800">✨ Showcase Video</option>
+                           <option value="social_content" className="bg-slate-800">📱 Social Content</option>
+                         </select>
+                       </div>
+
+                       <div>
+                         <label className="block text-sm font-semibold text-pink-300 mb-3">Style</label>
+                         <select
+                           value={videoStyle}
+                           onChange={(e) => setVideoStyle(e.target.value)}
+                           className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         >
+                           <option value="professional" className="bg-slate-800">💼 Professional</option>
+                           <option value="cinematic" className="bg-slate-800">🎬 Cinematic</option>
+                           <option value="realistic" className="bg-slate-800">📷 Realistic</option>
+                           <option value="drone_view" className="bg-slate-800">🚁 Drone View</option>
+                           <option value="social_media" className="bg-slate-800">📱 Social Media</option>
+                         </select>
+                       </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div>
+                         <label className="block text-sm font-semibold text-pink-300 mb-3">Duration (seconds)</label>
+                         <input
+                           type="number"
+                           value={videoDuration}
+                           onChange={(e) => setVideoDuration(Number(e.target.value))}
+                           min="3"
+                           max="30"
+                           className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         />
+                       </div>
+
+                       <div>
+                         <label className="block text-sm font-semibold text-pink-300 mb-3">Aspect Ratio</label>
+                         <select
+                           value={videoRatio}
+                           onChange={(e) => setVideoRatio(e.target.value)}
+                           className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         >
+                           <option value="16:9" className="bg-slate-800">📺 16:9 Landscape</option>
+                           <option value="9:16" className="bg-slate-800">📱 9:16 Portrait</option>
+                           <option value="1:1" className="bg-slate-800">⬜ 1:1 Square</option>
+                         </select>
+                       </div>
+
+                       <div>
+                         <label className="block text-sm font-semibold text-pink-300 mb-3">Quality</label>
+                         <select
+                           value={videoQuality}
+                           onChange={(e) => setVideoQuality(e.target.value)}
+                           className="w-full px-6 py-4 bg-pink-900/20 border border-pink-500/30 rounded-xl text-white focus:ring-2 focus:ring-pink-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                         >
+                           <option value="draft" className="bg-slate-800">⚡ Draft</option>
+                           <option value="standard" className="bg-slate-800">⭐ Standard</option>
+                           <option value="premium" className="bg-slate-800">💎 Premium</option>
+                         </select>
+                       </div>
+                     </div>
+
+                     <button
+                       onClick={handleVideoGenerate}
+                       disabled={!videoPrompt || isGenerating}
+                       className="w-full text-white py-4 px-8 rounded-xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-pink-500 via-purple-500 to-pink-600 hover:from-pink-600 hover:via-purple-600 hover:to-pink-700"
+                     >
+                       {isGenerating ? (
+                         <>
+                           <RefreshCw className="w-6 h-6 animate-spin" />
+                           <span>Generating Premium Video...</span>
+                         </>
+                       ) : (
+                         <>
+                           <Target className="w-6 h-6" />
+                           <span>Generate Premium Video</span>
+                         </>
+                       )}
+                     </button>
+                   </div>
+
+                   {generatedVideo && (
+                     <div className="bg-pink-900/20 rounded-xl p-6 border border-pink-500/30">
+                       <h3 className="text-xl font-bold text-white mb-4">Generated Video</h3>
+                       <div className="space-y-4">
+                         <div className="bg-slate-900/50 rounded-lg p-4">
+                           <video 
+                             src={generatedVideo.url}
+                             controls
+                             className="w-full rounded-lg"
+                             style={{ maxHeight: '300px' }}
+                           />
+                         </div>
+                         <div className="grid grid-cols-2 gap-4 text-sm">
+                           <div>
+                             <p className="text-pink-300 font-medium">Type: {generatedVideo.type}</p>
+                             <p className="text-slate-400">Duration: {generatedVideo.metadata.duration}s</p>
+                           </div>
+                           <div>
+                             <p className="text-pink-300 font-medium">Quality: {generatedVideo.metadata.fps} FPS</p>
+                             <p className="text-slate-400">Ratio: {generatedVideo.aspectRatio}</p>
+                           </div>
+                         </div>
+                         <div className="flex space-x-3">
+                           <button 
+                             onClick={() => window.open(generatedVideo.url, '_blank')}
+                             className="flex-1 px-4 py-2 bg-pink-500/20 text-pink-300 rounded-xl hover:bg-pink-500/30 border border-pink-400/30 flex items-center justify-center space-x-2 transition-all duration-200"
+                           >
+                             <Download className="w-4 h-4" />
+                             <span>Download Video</span>
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   )}
                  </div>
                </div>
              )}
