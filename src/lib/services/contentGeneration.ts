@@ -25,7 +25,7 @@ export async function generateContent({
   template
 }: ContentGenerationRequest): Promise<GeneratedContent> {
   
-  logger.info('Starting content generation', { topic, contentType, platform });
+  logger.info('Starting content generation', { topic, contentType, platform, template });
   
   let content: string;
   let generatedBy: 'replicate' | 'openai';
