@@ -14,6 +14,9 @@ interface DocumentData {
   marketData?: number[];
   priceHistory?: number[];
   neighborhoodData?: number[];
+  areas?: string[];
+  prices?: number[];
+  growth?: number[];
   area?: string;
   title?: string;
   [key: string]: unknown;
@@ -76,7 +79,7 @@ const createROIChart = async (data: DocumentData) => {
         title: {
           display: true,
           text: 'Houston Investment Analysis - 5 Year Projection',
-          font: { size: 18, weight: 'bold' }
+          font: { size: 18, weight: 'bold' as const }
         },
         legend: { position: 'top' as const }
       },
@@ -127,7 +130,7 @@ const createMarketChart = async (data: DocumentData) => {
         title: {
           display: true,
           text: 'Houston Area Market Comparison',
-          font: { size: 18, weight: 'bold' }
+          font: { size: 18, weight: 'bold' as const }
         }
       },
       scales: {
