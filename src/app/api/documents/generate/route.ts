@@ -84,8 +84,8 @@ const createROIChart = async (data: DocumentData) => {
         y: {
           beginAtZero: false,
           ticks: {
-            callback: function(value: any) {
-              return '$' + value.toLocaleString();
+            callback: function(value: string | number) {
+              return '$' + Number(value).toLocaleString();
             }
           }
         }
@@ -136,8 +136,8 @@ const createMarketChart = async (data: DocumentData) => {
           display: true,
           position: 'left' as const,
           ticks: {
-            callback: function(value: any) {
-              return '$' + value.toLocaleString();
+            callback: function(value: string | number) {
+              return '$' + Number(value).toLocaleString();
             }
           }
         },
@@ -146,8 +146,8 @@ const createMarketChart = async (data: DocumentData) => {
           display: true,
           position: 'right' as const,
           ticks: {
-            callback: function(value: any) {
-              return value + '%';
+            callback: function(value: string | number) {
+              return Number(value) + '%';
             }
           },
           grid: { drawOnChartArea: false }
