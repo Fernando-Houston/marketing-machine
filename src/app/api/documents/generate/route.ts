@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import puppeteer from 'puppeteer';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+interface DocumentData {
+  timeline?: string[];
+  propertyValue?: number[];
+  rentalIncome?: number[];
+  expenses?: number[];
+  netIncome?: number[];
+  marketData?: number[];
+  priceHistory?: number[];
+  neighborhoodData?: number[];
+  area?: string;
+  title?: string;
+  [key: string]: unknown;
+}
 
 interface DocumentGenerationRequest {
   type: 'market_report' | 'property_brochure' | 'investment_analysis' | 'marketing_flyer';
   title: string;
-  data: any;
+  data: DocumentData;
   template?: string;
   includeCharts?: boolean;
   houstonArea?: string;
@@ -29,7 +45,7 @@ interface DocumentGenerationResponse {
 }
 
 // Chart configuration for ROI analysis
-const createROIChart = async (data: any) => {
+const createROIChart = async (data: DocumentData) => {
   const width = 800;
   const height = 400;
   const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
@@ -81,7 +97,7 @@ const createROIChart = async (data: any) => {
 };
 
 // Generate market comparison chart
-const createMarketChart = async (data: any) => {
+const createMarketChart = async (data: DocumentData) => {
   const width = 800;
   const height = 400;
   const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
@@ -144,7 +160,7 @@ const createMarketChart = async (data: any) => {
 };
 
 // Generate HTML template for different document types
-const generateHTML = async (type: string, data: any, charts?: { roi?: Buffer, market?: Buffer }) => {
+const generateHTML = async (type: string, data: DocumentData, charts?: { roi?: Buffer, market?: Buffer }) => {
   const currentDate = new Date().toLocaleDateString();
   const chartROI = charts?.roi ? `data:image/png;base64,${charts.roi.toString('base64')}` : null;
   const chartMarket = charts?.market ? `data:image/png;base64,${charts.market.toString('base64')}` : null;
@@ -394,7 +410,7 @@ export async function POST(request: NextRequest) {
 
     logger.info('Document generation request received', { type, title, includeCharts, houstonArea });
 
-    let charts: { roi?: Buffer, market?: Buffer } = {};
+    const charts: { roi?: Buffer, market?: Buffer } = {};
 
     // Generate charts if requested
     if (includeCharts) {
@@ -436,13 +452,11 @@ export async function POST(request: NextRequest) {
     const fileName = `${type}_${sanitizedTitle}_${timestamp}.pdf`;
     
     // Save PDF to public directory
-    const fs = require('fs').promises;
-    const path = require('path');
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'documents');
     
     try {
       await fs.mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
+    } catch {
       // Directory might already exist
     }
     
