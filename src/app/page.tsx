@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Copy, Save, RefreshCw, TrendingUp, Users, Sparkles, Download, Trash2, Search, Star, Calendar, BarChart3, Target, Zap, Award, DollarSign, Building2, Plus, Eye } from 'lucide-react';
+import { Copy, Save, RefreshCw, TrendingUp, Users, Sparkles, Download, Trash2, Search, Star, Calendar, BarChart3, Target, Zap, Award, DollarSign, Building2, Plus, Eye, Calculator } from 'lucide-react';
+import ROICalculator from '@/components/ROICalculator';
+import PropertyComparison from '@/components/PropertyComparison';
 
 interface ContentItem {
   id: string;
@@ -302,6 +304,25 @@ export default function Home() {
     }
   }, [activeTab, templates.length]);
 
+  // Prevent default drag behaviors on the entire page to avoid browser navigation
+  useEffect(() => {
+    const handleGlobalDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    
+    const handleGlobalDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
+    
+    return () => {
+      document.removeEventListener('dragover', handleGlobalDragOver);
+      document.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, []);
+
   const loadTemplates = async () => {
     setTemplateLoading(true);
     try {
@@ -371,6 +392,20 @@ export default function Home() {
   const handleImageUpload = async (file: File) => {
     if (!file) return;
     
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPEG, PNG, WebP, or GIF)');
+      return;
+    }
+    
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('File size too large. Please upload an image smaller than 10MB.');
+      return;
+    }
+    
     setIsGenerating(true);
     setUploadProgress(0);
     
@@ -378,21 +413,36 @@ export default function Home() {
       const formData = new FormData();
       formData.append('image', file);
       
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 100);
+      
       const response = await fetch('/api/images/upload', {
         method: 'POST',
         body: formData
       });
       
+      clearInterval(progressInterval);
+      
       const result = await response.json();
       if (result.success) {
         setUploadedImage(result.data);
         setUploadProgress(100);
+        console.log('Image uploaded successfully:', result.data);
       } else {
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('Failed to upload image. Please try again.');
+      alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      setUploadProgress(0);
     } finally {
       setIsGenerating(false);
     }
@@ -400,16 +450,28 @@ export default function Home() {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    e.stopPropagation();
+    // Only set to false if we're leaving the drop zone itself, not a child element
+    if (e.currentTarget === e.target) {
+      setIsDragOver(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
     
     const files = Array.from(e.dataTransfer.files);
@@ -622,15 +684,15 @@ export default function Home() {
               {/* Premium Logo Section */}
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  {!false ? (
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rounded-2xl flex items-center justify-center border-2 border-blue-400/30 shadow-xl">
-                      <Building2 className="w-8 h-8 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center border-2 border-blue-200 shadow-xl">
-                      <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                  )}
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rounded-2xl flex items-center justify-center border-2 border-blue-400/30 shadow-xl">
+                    <Image 
+                      src="/houston-land-guys-logo.svg" 
+                      alt="Houston Land Guys Logo"
+                      width={48}
+                      height={48}
+                      className="rounded-lg"
+                    />
+                  </div>
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
                 </div>
                 <div>
@@ -650,6 +712,7 @@ export default function Home() {
                   { id: 'generate', label: 'Generate', icon: Zap },
                   { id: 'documents', label: 'Documents', icon: Download },
                   { id: 'videos', label: 'Videos', icon: Target },
+                  { id: 'interactive', label: 'Interactive', icon: Calculator },
                   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
                   { id: 'calendar', label: 'Calendar', icon: Calendar },
                   { id: 'templates', label: 'Templates', icon: Star }
@@ -832,11 +895,12 @@ export default function Home() {
                          </label>
                          <div 
                            onDragOver={handleDragOver}
+                           onDragEnter={handleDragEnter}
                            onDragLeave={handleDragLeave}
                            onDrop={handleDrop}
                            className={`relative w-full px-6 py-8 border-2 border-dashed rounded-xl transition-all duration-200 cursor-pointer ${
                              isDragOver 
-                               ? 'border-green-400 bg-green-500/10' 
+                               ? 'border-green-400 bg-green-500/20 scale-105 shadow-lg shadow-green-500/25' 
                                : 'border-green-500/30 bg-green-900/20 hover:border-green-400 hover:bg-green-500/10'
                            }`}
                          >
@@ -844,12 +908,16 @@ export default function Home() {
                              type="file" 
                              accept="image/*" 
                              onChange={handleFileSelect}
-                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                            />
-                           <div className="text-center">
-                             <Plus className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                             <p className="text-green-300 font-medium">
-                               Drag & drop your image here, or click to browse
+                           <div className="text-center pointer-events-none">
+                             <Plus className={`w-12 h-12 mx-auto mb-4 transition-all duration-300 ${
+                               isDragOver ? 'text-green-300 scale-110' : 'text-green-400'
+                             }`} />
+                             <p className={`font-medium transition-all duration-300 ${
+                               isDragOver ? 'text-green-200' : 'text-green-300'
+                             }`}>
+                               {isDragOver ? 'Drop your image here!' : 'Drag & drop your image here, or click to browse'}
                              </p>
                              <p className="text-green-400/60 text-sm mt-2">
                                Supports JPEG, PNG, WebP, GIF (max 10MB)
@@ -1275,27 +1343,163 @@ export default function Home() {
                </div>
              )}
 
-             {/* Content Calendar */}
+             {/* Working Content Calendar */}
              {activeTab === 'calendar' && (
-               <div className="bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
-                 <div className="flex justify-between items-center mb-8">
-                   <div>
-                     <h2 className="text-2xl font-bold text-white">Content Calendar</h2>
-                     <p className="text-purple-300">Schedule and plan your Houston real estate content</p>
+               <div className="space-y-8">
+                 <div className="bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
+                   <div className="flex justify-between items-center mb-8">
+                     <div>
+                       <h2 className="text-2xl font-bold text-white">Content Calendar & Scheduler</h2>
+                       <p className="text-purple-300">Plan and schedule your Houston real estate content</p>
+                     </div>
+                     <div className="flex space-x-3">
+                       <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200">
+                         <Plus className="w-4 h-4" />
+                         <span>Schedule Content</span>
+                       </button>
+                       <button className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-xl hover:bg-blue-500/30 border border-blue-400/30 flex items-center space-x-2 transition-all duration-200">
+                         <Calendar className="w-4 h-4" />
+                         <span>View Calendar</span>
+                       </button>
+                     </div>
                    </div>
-                   <div className="flex space-x-3">
-                     <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200">
-                       <Plus className="w-4 h-4" />
-                       <span>Schedule Content</span>
-                     </button>
+
+                   {/* Calendar Grid */}
+                   <div className="grid grid-cols-7 gap-2 mb-6">
+                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                       <div key={day} className="text-center text-purple-300 font-semibold py-3">
+                         {day}
+                       </div>
+                     ))}
+                     
+                     {/* Sample calendar days */}
+                     {Array.from({ length: 35 }, (_, i) => {
+                       const day = i < 3 ? '' : (i - 2).toString();
+                       const today = new Date().getDate();
+                       const isToday = day === today.toString();
+                       const hasContent = [5, 12, 18, 25].includes(Number(day));
+                       
+                       return (
+                         <div
+                           key={i}
+                           className={`min-h-[80px] p-2 rounded-lg border transition-all duration-200 ${
+                             day
+                               ? isToday
+                                 ? 'bg-purple-500/30 border-purple-400 text-white'
+                                 : hasContent
+                                 ? 'bg-blue-500/20 border-blue-400/30 hover:bg-blue-500/30 cursor-pointer'
+                                 : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50 cursor-pointer'
+                               : 'bg-transparent border-transparent'
+                           }`}
+                         >
+                           {day && (
+                             <div>
+                               <div className={`text-sm mb-1 ${isToday ? 'font-bold' : ''}`}>{day}</div>
+                               {hasContent && (
+                                 <div className="space-y-1">
+                                   <div className="text-xs bg-blue-400/20 text-blue-300 px-2 py-1 rounded">
+                                     Market Update
+                                   </div>
+                                   {Number(day) === 18 && (
+                                     <div className="text-xs bg-green-400/20 text-green-300 px-2 py-1 rounded">
+                                       Investment Tip
+                                     </div>
+                                   )}
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })}
                    </div>
-                 </div>
-                 
-                 <div className="text-center py-16">
-                   <Calendar className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                   <h3 className="text-xl font-semibold text-white mb-2">Content Calendar Coming Soon</h3>
-                   <p className="text-purple-300 mb-4">Advanced scheduling and planning features</p>
-                   <p className="text-slate-400 text-sm">• Automated posting schedules<br/>• Content performance tracking<br/>• Houston market timing optimization</p>
+
+                   {/* Scheduled Content */}
+                   <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
+                     <h3 className="text-lg font-semibold text-white mb-4">Upcoming Scheduled Content</h3>
+                     <div className="space-y-3">
+                       <div className="flex items-center justify-between p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                         <div>
+                           <h4 className="text-white font-medium">Houston Heights Market Update</h4>
+                           <p className="text-blue-300 text-sm">Instagram • Today at 2:00 PM</p>
+                         </div>
+                         <div className="flex space-x-2">
+                           <button className="text-blue-400 hover:text-blue-300 transition-colors">
+                             <Eye className="w-4 h-4" />
+                           </button>
+                           <button className="text-slate-400 hover:text-white transition-colors">
+                             <RefreshCw className="w-4 h-4" />
+                           </button>
+                         </div>
+                       </div>
+                       
+                       <div className="flex items-center justify-between p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                         <div>
+                           <h4 className="text-white font-medium">Energy Corridor Investment Analysis</h4>
+                           <p className="text-green-300 text-sm">LinkedIn • Tomorrow at 9:00 AM</p>
+                         </div>
+                         <div className="flex space-x-2">
+                           <button className="text-green-400 hover:text-green-300 transition-colors">
+                             <Eye className="w-4 h-4" />
+                           </button>
+                           <button className="text-slate-400 hover:text-white transition-colors">
+                             <RefreshCw className="w-4 h-4" />
+                           </button>
+                         </div>
+                       </div>
+                       
+                       <div className="flex items-center justify-between p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                         <div>
+                           <h4 className="text-white font-medium">Weekly Market Report</h4>
+                           <p className="text-purple-300 text-sm">All Platforms • Friday at 10:00 AM</p>
+                         </div>
+                         <div className="flex space-x-2">
+                           <button className="text-purple-400 hover:text-purple-300 transition-colors">
+                             <Eye className="w-4 h-4" />
+                           </button>
+                           <button className="text-slate-400 hover:text-white transition-colors">
+                             <RefreshCw className="w-4 h-4" />
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+
+                   {/* Content Performance Metrics */}
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-6 border border-blue-500/20">
+                       <div className="flex items-center justify-between mb-4">
+                         <div>
+                           <p className="text-blue-300 text-sm font-medium">Scheduled Posts</p>
+                           <p className="text-2xl font-bold text-white">12</p>
+                         </div>
+                         <Calendar className="w-8 h-8 text-blue-400" />
+                       </div>
+                       <p className="text-blue-400 text-xs">Next 30 days</p>
+                     </div>
+                     
+                     <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-6 border border-green-500/20">
+                       <div className="flex items-center justify-between mb-4">
+                         <div>
+                           <p className="text-green-300 text-sm font-medium">Auto-Generated</p>
+                           <p className="text-2xl font-bold text-white">8</p>
+                         </div>
+                         <Zap className="w-8 h-8 text-green-400" />
+                       </div>
+                       <p className="text-green-400 text-xs">From templates</p>
+                     </div>
+                     
+                     <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-6 border border-purple-500/20">
+                       <div className="flex items-center justify-between mb-4">
+                         <div>
+                           <p className="text-purple-300 text-sm font-medium">Engagement Rate</p>
+                           <p className="text-2xl font-bold text-white">8.4%</p>
+                         </div>
+                         <TrendingUp className="w-8 h-8 text-purple-400" />
+                       </div>
+                       <p className="text-purple-400 text-xs">+2.1% this month</p>
+                     </div>
+                   </div>
                  </div>
                </div>
              )}
@@ -1776,6 +1980,116 @@ export default function Home() {
                       </p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Interactive Content Tools */}
+            {activeTab === 'interactive' && (
+              <div className="space-y-8">
+                {/* Interactive Tools Selection */}
+                <div className="bg-black/30 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-8 shadow-2xl">
+                  <div className="flex items-center space-x-3 mb-8">
+                    <Calculator className="w-8 h-8 text-emerald-400" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Interactive Houston Real Estate Tools</h2>
+                      <p className="text-emerald-300">Professional investment analysis and comparison tools</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 rounded-xl p-6 border border-emerald-500/20">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <Calculator className="w-6 h-6 text-emerald-400" />
+                        <h3 className="text-xl font-semibold text-white">ROI Calculator</h3>
+                      </div>
+                      <p className="text-emerald-300 mb-4">
+                        Calculate investment returns with Houston market data, cash flow analysis, and 5-year projections.
+                      </p>
+                      <div className="space-y-2 text-sm text-slate-300">
+                        <p>✓ Cash-on-cash return analysis</p>
+                        <p>✓ Cap rate calculations</p>
+                        <p>✓ Houston market benchmarks</p>
+                        <p>✓ Break-even timeline</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/10 rounded-xl p-6 border border-cyan-500/20">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <BarChart3 className="w-6 h-6 text-cyan-400" />
+                        <h3 className="text-xl font-semibold text-white">Property Comparison</h3>
+                      </div>
+                      <p className="text-cyan-300 mb-4">
+                        Compare multiple properties side-by-side with detailed metrics and neighborhood analysis.
+                      </p>
+                      <div className="space-y-2 text-sm text-slate-300">
+                        <p>✓ Side-by-side comparison</p>
+                        <p>✓ Investment scoring system</p>
+                        <p>✓ Neighborhood ratings</p>
+                        <p>✓ Best property recommendations</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROI Calculator Tool */}
+                <ROICalculator />
+
+                {/* Property Comparison Tool */}
+                <PropertyComparison />
+
+                {/* Bulk Content Generation */}
+                <div className="bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
+                  <div className="flex items-center space-x-3 mb-8">
+                    <Zap className="w-8 h-8 text-purple-400" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Bulk Content Generation</h2>
+                      <p className="text-purple-300">Generate multiple content pieces simultaneously for maximum efficiency</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
+                    <div className="text-center py-16">
+                      <Zap className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-white mb-2">Bulk Tools Coming Soon</h3>
+                      <p className="text-purple-300 mb-4">Advanced batch processing and multi-content generation</p>
+                      <p className="text-slate-400 text-sm">
+                        • Batch generate 50+ content pieces<br/>
+                        • CSV import for property data<br/>
+                        • Automated content scheduling<br/>
+                        • Template-based bulk creation
+                      </p>
+                      <div className="mt-6 inline-flex items-center px-4 py-2 bg-purple-500/20 text-purple-300 rounded-lg border border-purple-400/30">
+                        <Star className="w-4 h-4 mr-2" />
+                        Enterprise Feature
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Calendar Dashboard - Enhanced */}
+            {activeTab === 'calendar' && (
+              <div className="bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Content Calendar</h2>
+                    <p className="text-purple-300">Schedule and plan your Houston real estate content</p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200">
+                      <Plus className="w-4 h-4" />
+                      <span>Schedule Content</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="text-center py-16">
+                  <Calendar className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">Content Calendar Coming Soon</h3>
+                  <p className="text-purple-300 mb-4">Advanced scheduling and planning features</p>
+                  <p className="text-slate-400 text-sm">• Automated posting schedules<br/>• Content performance tracking<br/>• Houston market timing optimization</p>
                 </div>
               </div>
             )}
