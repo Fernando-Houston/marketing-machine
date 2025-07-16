@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
 
 interface CSVImportResponse {
@@ -18,129 +16,118 @@ interface CSVImportResponse {
   };
 }
 
-// Supported CSV formats for real estate
-const REAL_ESTATE_COLUMN_MAPPINGS = {
-  // Market Data CSV
-  market: {
-    required: ['address', 'price', 'sqft', 'bedrooms', 'bathrooms'],
-    optional: ['lot_size', 'year_built', 'days_on_market', 'neighborhood', 'property_type']
-  },
-  // Sales Data CSV  
-  sales: {
-    required: ['sale_date', 'sale_price', 'address'],
-    optional: ['listing_price', 'price_per_sqft', 'agent', 'seller_type', 'buyer_type']
-  },
-  // Rental Data CSV
-  rentals: {
-    required: ['address', 'monthly_rent', 'bedrooms', 'bathrooms'],
-    optional: ['deposit', 'lease_term', 'utilities_included', 'parking', 'pet_policy']
-  },
-  // Investment Analysis CSV
-  investment: {
-    required: ['property_address', 'purchase_price', 'monthly_rent', 'expenses'],
-    optional: ['vacancy_rate', 'appreciation_rate', 'financing_terms', 'cash_flow']
+// In-memory storage for demo purposes
+// In production, you would use Redis, database, or other persistent storage
+const csvDataCache = new Map<string, any>();
+
+// Automatically clear old data every hour
+setInterval(() => {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  for (const [key, value] of csvDataCache.entries()) {
+    if (value.timestamp < oneHourAgo) {
+      csvDataCache.delete(key);
+    }
+  }
+}, 60 * 60 * 1000);
+
+// Parse CSV data from text
+const parseCSV = (csvText: string): Record<string, unknown>[] => {
+  try {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(header => header.trim().replace(/['"]/g, ''));
+    const data: Record<string, unknown>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(value => value.trim().replace(/['"]/g, ''));
+      if (values.length === headers.length) {
+        const row: Record<string, unknown> = {};
+        headers.forEach((header, index) => {
+          const value = values[index];
+          // Try to parse as number
+          const numValue = parseFloat(value);
+          row[header] = isNaN(numValue) ? value : numValue;
+        });
+        data.push(row);
+      }
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('CSV parsing failed', error);
+    return [];
   }
 };
 
-// CSV parsing utility
-function parseCSV(csvText: string): Record<string, unknown>[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) {
-    throw new Error('CSV must have at least a header row and one data row');
-  }
+// Detect CSV type based on column names
+const detectCSVType = (columns: string[]): { type: string; confidence: number } => {
+  const marketColumns = ['price', 'area', 'neighborhood', 'zipcode', 'listing', 'sale'];
+  const salesColumns = ['sold', 'date', 'buyer', 'agent', 'commission'];
+  const rentalColumns = ['rent', 'lease', 'tenant', 'monthly', 'deposit'];
+  const investmentColumns = ['roi', 'cap_rate', 'cash_flow', 'irr', 'noi'];
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'));
-  const data: Record<string, unknown>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
-    if (values.length !== headers.length) {
-      logger.warn(`Row ${i + 1} has ${values.length} columns, expected ${headers.length}. Skipping.`);
-      continue;
-    }
-
-    const row: Record<string, unknown> = {};
-    headers.forEach((header, index) => {
-      let value: unknown = values[index];
-      
-      // Try to parse numbers
-      if (value && typeof value === 'string') {
-        // Remove currency symbols and commas
-        const cleaned = value.replace(/[$,]/g, '');
-        if (!isNaN(Number(cleaned)) && cleaned !== '') {
-          value = Number(cleaned);
-        }
-      }
-      
-      row[header] = value;
-    });
-    data.push(row);
-  }
-
-  return data;
-}
-
-// Detect CSV type based on columns
-function detectCSVType(columns: string[]): { type: string; confidence: number } {
-  const normalizedColumns = columns.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+  const columnStr = columns.join(' ').toLowerCase();
   
-  let bestMatch = { type: 'general', confidence: 0 };
-  
-  for (const [type, mapping] of Object.entries(REAL_ESTATE_COLUMN_MAPPINGS)) {
-    const requiredMatches = mapping.required.filter(req => 
-      normalizedColumns.some(col => col.includes(req) || req.includes(col))
-    ).length;
-    
-    const optionalMatches = mapping.optional.filter(opt => 
-      normalizedColumns.some(col => col.includes(opt) || opt.includes(col))
-    ).length;
-    
-    const confidence = (requiredMatches / mapping.required.length) * 0.7 + 
-                      (optionalMatches / mapping.optional.length) * 0.3;
-    
-    if (confidence > bestMatch.confidence) {
-      bestMatch = { type, confidence };
+  let maxScore = 0;
+  let detectedType = 'unknown';
+
+  const scores = {
+    market_data: marketColumns.filter(col => columnStr.includes(col)).length / marketColumns.length,
+    sales_data: salesColumns.filter(col => columnStr.includes(col)).length / salesColumns.length,
+    rental_data: rentalColumns.filter(col => columnStr.includes(col)).length / rentalColumns.length,
+    investment_data: investmentColumns.filter(col => columnStr.includes(col)).length / investmentColumns.length
+  };
+
+  for (const [type, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      detectedType = type;
     }
   }
-  
-  return bestMatch;
-}
 
-// Generate document suggestions based on CSV type and data
-function generateSuggestions(csvType: string, data: Record<string, unknown>[]): {
+  return {
+    type: detectedType,
+    confidence: Math.max(0.3, maxScore) // Minimum 30% confidence
+  };
+};
+
+// Generate suggestions based on CSV type and data
+const generateSuggestions = (csvType: string, data: Record<string, unknown>[]): {
   documentType: string;
   recommendedCharts: string[];
   keyMetrics: string[];
-} {
+} => {
   const suggestions = {
-    market: {
+    market_data: {
       documentType: 'market_analysis_report',
-      recommendedCharts: ['price_distribution', 'price_per_sqft_trends', 'days_on_market', 'neighborhood_comparison'],
-      keyMetrics: ['median_price', 'average_sqft', 'price_per_sqft', 'inventory_levels']
+      recommendedCharts: ['Price Trends by Area', 'Inventory Levels', 'Market Activity'],
+      keyMetrics: ['Median Price', 'Days on Market', 'Sales Volume', 'Price Per SqFt']
     },
-    sales: {
-      documentType: 'sales_performance_report', 
-      recommendedCharts: ['monthly_sales_volume', 'price_trends', 'average_days_on_market', 'price_vs_listing'],
-      keyMetrics: ['total_sales_volume', 'average_sale_price', 'months_of_inventory', 'price_appreciation']
+    sales_data: {
+      documentType: 'investment_portfolio_report',
+      recommendedCharts: ['Sales Volume by Month', 'Commission Analysis', 'Agent Performance'],
+      keyMetrics: ['Total Sales', 'Average Sale Price', 'Commission Revenue', 'Deal Count']
     },
-    rentals: {
-      documentType: 'rental_market_report',
-      recommendedCharts: ['rent_by_bedroom_count', 'rent_per_sqft', 'occupancy_rates', 'neighborhood_rent_comparison'],
-      keyMetrics: ['average_rent', 'rent_per_sqft', 'vacancy_rate', 'rental_yield']
+    rental_data: {
+      documentType: 'neighborhood_guide',
+      recommendedCharts: ['Rent by Property Type', 'Occupancy Rates', 'Lease Trends'],
+      keyMetrics: ['Average Rent', 'Vacancy Rate', 'Rent Growth', 'Tenant Retention']
     },
-    investment: {
-      documentType: 'investment_analysis_portfolio',
-      recommendedCharts: ['cash_flow_analysis', 'roi_comparison', 'cap_rate_distribution', 'payback_period'],
-      keyMetrics: ['total_portfolio_value', 'average_cap_rate', 'total_monthly_cash_flow', 'average_roi']
+    investment_data: {
+      documentType: 'investment_portfolio_report',
+      recommendedCharts: ['ROI Distribution', 'Cash Flow Analysis', 'Cap Rate Comparison'],
+      keyMetrics: ['Average ROI', 'Total Cash Flow', 'Portfolio Value', 'IRR']
+    },
+    unknown: {
+      documentType: 'market_analysis_report',
+      recommendedCharts: ['Data Distribution', 'Key Metrics Overview', 'Trend Analysis'],
+      keyMetrics: ['Count', 'Average Values', 'Growth Rates', 'Performance Indicators']
     }
   };
 
-  return suggestions[csvType as keyof typeof suggestions] || {
-    documentType: 'custom_data_report',
-    recommendedCharts: ['data_overview', 'key_metrics'],
-    keyMetrics: ['data_summary', 'trend_analysis']
-  };
-}
+  return suggestions[csvType as keyof typeof suggestions] || suggestions.unknown;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -200,28 +187,23 @@ export async function POST(request: NextRequest) {
     const { type: csvType, confidence } = detectCSVType(columns);
     const suggestions = generateSuggestions(csvType, processedData);
 
-    // Save processed data for later use
+    // Store processed data in memory cache
     const uniqueId = crypto.randomUUID();
     const timestamp = Date.now();
-    const fileName = `csv_import_${timestamp}_${uniqueId}.json`;
     
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'csv-data');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch {
-      // Directory might already exist
-    }
-    
-    const filePath = path.join(uploadsDir, fileName);
-    await writeFile(filePath, JSON.stringify({
+    const csvData = {
       originalFileName: file.name,
       csvType,
       confidence,
       columns,
       data: processedData,
       suggestions,
-      timestamp: new Date().toISOString()
-    }, null, 2));
+      timestamp: new Date().toISOString(),
+      createdAt: timestamp
+    };
+
+    // Store in cache (in production, use Redis or database)
+    csvDataCache.set(uniqueId, csvData);
 
     const response: CSVImportResponse = {
       id: uniqueId,
@@ -261,54 +243,72 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ 
-    message: 'Houston Marketing Machine - CSV Import API',
-    description: 'Import CSV files containing real estate market data to generate professional reports',
-    endpoints: {
-      POST: 'Import and process CSV files',
-      formData: {
-        csv: 'File - CSV file containing real estate data'
+// GET endpoint to retrieve stored CSV data
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const csvId = searchParams.get('id');
+
+    if (csvId) {
+      // Return specific CSV data
+      const csvData = csvDataCache.get(csvId);
+      if (!csvData) {
+        return NextResponse.json(
+          { success: false, error: 'CSV data not found or expired' },
+          { status: 404 }
+        );
       }
-    },
-    supportedFormats: {
-      market_data: {
-        description: 'Property listings and market data',
-        requiredColumns: ['address', 'price', 'sqft', 'bedrooms', 'bathrooms'],
-        optionalColumns: ['lot_size', 'year_built', 'days_on_market', 'neighborhood', 'property_type'],
-        generatedReports: ['Market Analysis Report', 'Price Trend Analysis', 'Inventory Report']
-      },
-      sales_data: {
-        description: 'Historical sales transactions',
-        requiredColumns: ['sale_date', 'sale_price', 'address'],
-        optionalColumns: ['listing_price', 'price_per_sqft', 'agent', 'seller_type', 'buyer_type'],
-        generatedReports: ['Sales Performance Report', 'Agent Performance Analysis', 'Market Velocity Report']
-      },
-      rental_data: {
-        description: 'Rental market information',
-        requiredColumns: ['address', 'monthly_rent', 'bedrooms', 'bathrooms'],
-        optionalColumns: ['deposit', 'lease_term', 'utilities_included', 'parking', 'pet_policy'],
-        generatedReports: ['Rental Market Report', 'Cash Flow Analysis', 'Rental Yield Report']
-      },
-      investment_data: {
-        description: 'Investment property portfolio',
-        requiredColumns: ['property_address', 'purchase_price', 'monthly_rent', 'expenses'],
-        optionalColumns: ['vacancy_rate', 'appreciation_rate', 'financing_terms', 'cash_flow'],
-        generatedReports: ['Investment Portfolio Report', 'ROI Analysis', 'Cash Flow Projections']
-      }
-    },
-    features: [
-      'Automatic CSV type detection',
-      'Data validation and cleaning',
-      'Smart column mapping',
-      'Document type recommendations',
-      'Chart and metric suggestions',
-      'Professional report generation'
-    ],
-    limits: {
-      maxFileSize: '5MB',
-      maxRows: 10000,
-      supportedFormats: ['.csv']
+
+      return NextResponse.json({
+        success: true,
+        data: csvData,
+        message: 'CSV data retrieved successfully'
+      });
     }
-  });
+
+    // Return API info
+    return NextResponse.json({ 
+      message: 'Houston Marketing Machine - CSV Import API',
+      endpoints: {
+        POST: 'Import and process CSV files',
+        'GET?id=<uuid>': 'Retrieve processed CSV data by ID'
+      },
+      features: [
+        'Automatic CSV type detection',
+        'Data validation and cleaning', 
+        'Business intelligence suggestions',
+        'Houston real estate data processing',
+        'Document generation recommendations'
+      ],
+      supportedTypes: {
+        market_data: 'Real estate market analysis data',
+        sales_data: 'Property sales and transaction data',
+        rental_data: 'Rental market and lease information',
+        investment_data: 'Investment performance and ROI data'
+      },
+      storage: {
+        method: 'In-memory cache (1 hour retention)',
+        note: 'For production use, implement persistent storage (Redis/Database)',
+        maxFileSize: '5MB',
+        retention: '1 hour'
+      },
+      limits: {
+        maxFileSize: '5MB',
+        allowedFormats: ['.csv'],
+        dataRetention: '1 hour (demo mode)'
+      }
+    });
+
+  } catch (error) {
+    logger.error('CSV retrieval failed', error);
+    
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'CSV retrieval failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
 } 

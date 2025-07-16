@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
 
 interface UploadedImageResponse {
@@ -66,31 +64,21 @@ export async function POST(request: NextRequest) {
       fileType: file.type 
     });
 
-    // Generate unique filename
-    const fileExtension = path.extname(file.name);
+    // Generate unique ID
     const uniqueId = crypto.randomUUID();
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${uniqueId}${fileExtension}`;
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'images');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch {
-      // Directory might already exist, that's okay
-    }
-
-    // Save file to disk
-    const filePath = path.join(uploadsDir, fileName);
+    // Convert file to base64 data URL for temporary storage
+    // In production, you would upload to cloud storage (AWS S3, Cloudinary, etc.)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
-    await writeFile(filePath, buffer);
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     // Create response object
     const imageResponse: UploadedImageResponse = {
       id: uniqueId,
-      url: `/uploads/images/${fileName}`,
+      url: dataUrl, // Using data URL for serverless compatibility
       originalName: file.name,
       size: file.size,
       type: file.type,
@@ -104,14 +92,14 @@ export async function POST(request: NextRequest) {
 
     logger.success('Image uploaded successfully', {
       id: imageResponse.id,
-      fileName: fileName,
+      fileName: file.name,
       size: file.size
     });
 
     return NextResponse.json({
       success: true,
       data: imageResponse,
-      message: 'Image uploaded successfully'
+      message: 'Image uploaded and converted to data URL successfully'
     });
 
   } catch (error) {
@@ -132,7 +120,7 @@ export async function GET() {
   return NextResponse.json({ 
     message: 'Houston Marketing Machine - Image Upload API',
     endpoints: {
-      POST: 'Upload image files',
+      POST: 'Upload image files and convert to data URLs',
       formData: {
         image: 'File - Image file to upload (JPEG, PNG, WebP, GIF)'
       }
@@ -141,10 +129,15 @@ export async function GET() {
       maxFileSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
       allowedTypes: ALLOWED_TYPES
     },
+    serverlessInfo: {
+      storageMethod: 'Data URLs (base64 encoded)',
+      note: 'For production use, consider cloud storage services like AWS S3 or Cloudinary',
+      temporaryStorage: 'Images are converted to data URLs for immediate use'
+    },
     examples: {
       success: {
         id: "uuid-v4",
-        url: "/uploads/images/timestamp-uuid.jpg",
+        url: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
         originalName: "property-photo.jpg",
         size: 2048576,
         type: "image/jpeg"

@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import Replicate from 'replicate';
 
-// Initialize Replicate client
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
+// Initialize Replicate client with validation
+const initializeReplicate = () => {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) {
+    logger.warn('REPLICATE_API_TOKEN not configured - image generation will be unavailable');
+    return null;
+  }
+  return new Replicate({ auth: token });
+};
+
+const replicate = initializeReplicate();
 
 interface ImageGenerationRequest {
   prompt: string;
@@ -33,30 +40,50 @@ interface ImageGenerationResponse {
   };
 }
 
+// Generate a placeholder image URL for demo purposes
+const generatePlaceholderImage = (width: number, height: number, prompt: string) => {
+  const baseUrl = 'https://via.placeholder.com';
+  const backgroundColor = '3b82f6'; // Blue color
+  const textColor = 'ffffff';
+  const text = encodeURIComponent('Houston Real Estate');
+  return `${baseUrl}/${width}x${height}/${backgroundColor}/${textColor}?text=${text}`;
+};
+
 const houstonRealEstatePrompts = {
   property: {
-    realistic: "Professional real estate photography of a luxury Houston home, architectural details, modern design, bright natural lighting, professional composition, high-end residential property",
-    modern: "Contemporary Houston home exterior, sleek modern architecture, glass elements, clean lines, minimalist landscaping, urban setting",
-    luxury: "Luxury Houston mansion, upscale architecture, grand entrance, premium materials, elegant design, exclusive neighborhood",
-    minimalist: "Clean modern Houston home, simple lines, neutral colors, professional photography, minimal landscaping"
+    realistic: "Houston residential property, modern architecture, professional real estate photography, bright natural lighting",
+    modern: "Contemporary Houston home, clean lines, large windows, minimalist design, urban setting",
+    luxury: "Luxury Houston estate, premium finishes, upscale neighborhood, professional staging",
+    minimalist: "Clean modern Houston property, simple design, open spaces, neutral colors",
+    professional: "Professional Houston real estate photography, well-lit property, attractive curb appeal"
   },
   marketing: {
-    realistic: "Houston real estate marketing collateral, professional layout, clean design, property photos, modern typography, Houston skyline elements",
-    modern: "Contemporary real estate flyer design, Houston-themed, modern graphics, clean layout, professional presentation",
-    luxury: "Premium real estate marketing materials, gold accents, elegant typography, luxury branding, high-end design",
-    minimalist: "Clean real estate marketing design, white space, simple typography, professional layout, Houston branding"
+    realistic: "Houston real estate marketing material, professional layout, property showcase, branded design",
+    modern: "Modern Houston real estate flyer, contemporary graphics, clean typography, property highlights",
+    luxury: "Premium Houston real estate marketing, elegant design, luxury branding, high-end presentation",
+    minimalist: "Clean Houston real estate brochure, minimal design, focused content, professional layout",
+    professional: "Professional Houston real estate marketing collateral, branded design, high-quality visuals"
   },
   social: {
-    realistic: "Instagram-ready Houston real estate post, professional property photo, engaging layout, modern design elements",
-    modern: "Modern social media graphic for Houston real estate, contemporary design, vibrant colors, engaging typography",
-    luxury: "Luxury real estate social media post, premium design, elegant layout, high-end visual elements",
-    minimalist: "Clean social media design for real estate, simple layout, professional photography, minimal text"
+    realistic: "Houston real estate social media post, engaging visual, property highlight, professional quality",
+    modern: "Contemporary Houston real estate social content, modern graphics, eye-catching design",
+    luxury: "Luxury Houston real estate social media, premium aesthetic, elegant presentation",
+    minimalist: "Clean Houston real estate social post, simple design, clear messaging",
+    professional: "Professional Houston real estate social media content, branded visuals, engaging layout"
+  },
+  logo: {
+    realistic: "Houston real estate company logo, professional design, local elements, trustworthy branding",
+    modern: "Modern Houston real estate logo, contemporary design, clean typography, scalable",
+    luxury: "Luxury Houston real estate logo, premium branding, elegant design, sophisticated",
+    minimalist: "Minimalist Houston real estate logo, simple design, clean lines, memorable",
+    professional: "Professional Houston real estate company logo, corporate branding, trustworthy design"
   },
   infographic: {
     realistic: "Houston real estate market infographic, data visualization, professional charts, Houston skyline, market statistics",
     modern: "Contemporary Houston market data visualization, modern graphics, clean charts, trend indicators",
     luxury: "Premium real estate market infographic, elegant design, sophisticated data presentation, luxury branding",
-    minimalist: "Clean market data infographic, simple charts, minimal design, professional layout"
+    minimalist: "Clean market data infographic, simple charts, minimal design, professional layout",
+    professional: "Professional Houston market analysis infographic, corporate design, data-driven visuals"
   }
 };
 
@@ -104,8 +131,45 @@ export async function POST(request: NextRequest) {
       style, 
       aspectRatio, 
       quality,
-      promptLength: prompt.length 
+      promptLength: prompt.length,
+      replicateAvailable: !!replicate
     });
+
+    // Check if Replicate is available
+    if (!replicate) {
+      const dimensions = getImageDimensions(aspectRatio, quality);
+      const placeholderUrl = generatePlaceholderImage(dimensions.width, dimensions.height, prompt);
+      
+      const imageResponse: ImageGenerationResponse = {
+        id: Date.now().toString(),
+        url: placeholderUrl,
+        prompt: prompt,
+        type,
+        style,
+        aspectRatio,
+        generatedBy: 'placeholder-demo',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          model: 'placeholder-service',
+          steps: 0,
+          guidance_scale: 0,
+          width: dimensions.width,
+          height: dimensions.height
+        }
+      };
+
+      logger.info('Generated placeholder image due to missing Replicate API key', {
+        id: imageResponse.id,
+        type,
+        style
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: imageResponse,
+        message: 'Demo placeholder image generated (Replicate API not configured)'
+      });
+    }
 
     // Get enhanced prompt based on type and style
     const baseStylePrompt = houstonRealEstatePrompts[type as keyof typeof houstonRealEstatePrompts]?.[style as keyof typeof houstonRealEstatePrompts.property];
@@ -195,8 +259,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const isReplicateConfigured = !!replicate;
+  
   return NextResponse.json({ 
     message: 'Houston Marketing Machine - AI Image Generation API',
+    status: {
+      replicateConfigured: isReplicateConfigured,
+      mode: isReplicateConfigured ? 'production' : 'demo-placeholder'
+    },
     endpoints: {
       POST: 'Generate Houston real estate marketing images',
       body: {
@@ -226,6 +296,11 @@ export async function GET() {
     supportedTypes: ['property', 'marketing', 'social', 'logo', 'infographic'],
     supportedStyles: ['realistic', 'modern', 'luxury', 'minimalist', 'professional'],
     supportedRatios: ['1:1', '16:9', '4:3', '9:16'],
-    supportedQualities: ['draft', 'standard', 'premium']
+    supportedQualities: ['draft', 'standard', 'premium'],
+    configuration: {
+      note: isReplicateConfigured 
+        ? 'Replicate API configured - full AI image generation available'
+        : 'Replicate API not configured - using placeholder images for demo'
+    }
   });
 } 
