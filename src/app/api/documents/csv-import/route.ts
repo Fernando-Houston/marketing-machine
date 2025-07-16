@@ -18,13 +18,26 @@ interface CSVImportResponse {
 
 // In-memory storage for demo purposes
 // In production, you would use Redis, database, or other persistent storage
-const csvDataCache = new Map<string, any>();
+const csvDataCache = new Map<string, {
+  originalFileName: string;
+  csvType: string;
+  confidence: number;
+  columns: string[];
+  data: Record<string, unknown>[];
+  suggestions: {
+    documentType: string;
+    recommendedCharts: string[];
+    keyMetrics: string[];
+  };
+  timestamp: string;
+  createdAt: number;
+}>();
 
 // Automatically clear old data every hour
 setInterval(() => {
   const oneHourAgo = Date.now() - (60 * 60 * 1000);
   for (const [key, value] of csvDataCache.entries()) {
-    if (value.timestamp < oneHourAgo) {
+    if (value.createdAt < oneHourAgo) {
       csvDataCache.delete(key);
     }
   }
@@ -93,7 +106,7 @@ const detectCSVType = (columns: string[]): { type: string; confidence: number } 
 };
 
 // Generate suggestions based on CSV type and data
-const generateSuggestions = (csvType: string, data: Record<string, unknown>[]): {
+const generateSuggestions = (csvType: string, _data: Record<string, unknown>[]): {
   documentType: string;
   recommendedCharts: string[];
   keyMetrics: string[];

@@ -118,7 +118,6 @@ export default function Home() {
   const [showImageGen, setShowImageGen] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageType, setImageType] = useState('property');
@@ -129,14 +128,6 @@ export default function Home() {
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
-  // Document generation states
-  const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
-  const [documentType, setDocumentType] = useState('market_report');
-  const [documentTitle, setDocumentTitle] = useState('');
-  const [documentData, setDocumentData] = useState<DocumentData>({});
-  const [includeCharts, setIncludeCharts] = useState(true);
-  const [houstonArea, setHoustonArea] = useState('');
   
   // Video generation states
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
@@ -340,7 +331,6 @@ export default function Home() {
   };
 
   const selectTemplate = (template: Template) => {
-    setSelectedTemplate(template);
     setTopic(template.prompt.replace(/\{[^}]*\}/g, ''));
     
     // Map template category to content type
@@ -492,40 +482,7 @@ export default function Home() {
     }
   };
 
-  // Document generation handler
-  const handleDocumentGenerate = async () => {
-    if (!documentTitle) return;
-    
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/documents/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          type: documentType,
-          title: documentTitle,
-          data: {
-            ...documentData,
-            medianPrice: '$485,000',
-            priceGrowth: '+12.5%',
-            inventory: '2.8',
-            salesVolume: '8,547'
-          },
-          includeCharts,
-          houstonArea
-        })
-      });
-      
-      const result = await response.json();
-      if (result.success) {
-        setGeneratedDocument(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to generate document:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  // Document generation is now handled by EnhancedDocumentGenerator component
 
   // Video generation handler
   const handleVideoGenerate = async () => {
@@ -544,8 +501,8 @@ export default function Home() {
           style: videoStyle,
           aspectRatio: videoRatio,
           quality: videoQuality,
-          houstonArea,
-          propertyType
+                  houstonArea: 'Houston',
+        propertyType
         })
       });
       

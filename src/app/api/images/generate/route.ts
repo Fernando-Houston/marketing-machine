@@ -41,7 +41,7 @@ interface ImageGenerationResponse {
 }
 
 // Generate a placeholder image URL for demo purposes
-const generatePlaceholderImage = (width: number, height: number, prompt: string) => {
+const generatePlaceholderImage = (width: number, height: number, _prompt: string) => {
   const baseUrl = 'https://via.placeholder.com';
   const backgroundColor = '3b82f6'; // Blue color
   const textColor = 'ffffff';

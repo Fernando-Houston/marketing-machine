@@ -79,7 +79,7 @@ const createChartData = (data: DocumentData, type: 'roi' | 'market') => {
 };
 
 // Generate HTML template for different document types with embedded Chart.js
-const generateHTML = async (type: string, data: DocumentData, chartData?: { roi?: any, market?: any }) => {
+const generateHTML = async (type: string, data: DocumentData, chartData?: { roi?: object, market?: object }) => {
   const currentDate = new Date().toLocaleDateString();
   
   const chartScripts = chartData ? `
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
 
     logger.info('Document generation request received', { type, title, includeCharts, houstonArea });
 
-    const chartData: { roi?: any, market?: any } = {};
+    const chartData: { roi?: object, market?: object } = {};
 
     // Generate chart data if requested
     if (includeCharts) {

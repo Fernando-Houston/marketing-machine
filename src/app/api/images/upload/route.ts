@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
 
     // Generate unique ID
     const uniqueId = crypto.randomUUID();
-    const timestamp = Date.now();
 
     // Convert file to base64 data URL for temporary storage
     // In production, you would upload to cloud storage (AWS S3, Cloudinary, etc.)

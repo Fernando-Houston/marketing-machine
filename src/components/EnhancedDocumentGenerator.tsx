@@ -5,15 +5,12 @@ import {
   FileText, 
   Upload, 
   TrendingUp, 
-  BarChart3, 
   Download, 
   Sparkles,
-  Target,
   Search,
   Database,
   Zap,
   CheckCircle,
-  AlertCircle,
   Loader2
 } from 'lucide-react';
 
