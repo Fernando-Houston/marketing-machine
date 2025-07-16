@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateContent } from '@/lib/services/contentGeneration';
+import { generateContent, GeneratedContent } from '@/lib/services/contentGeneration';
 import { logger } from '@/lib/logger';
 
+interface ContentRequest {
+  topic: string;
+  contentType: string;
+  platform: string;
+  template?: string;
+}
+
 interface BulkContentRequest {
-  requests: Array<{
-    topic: string;
-    contentType: string;
-    platform: string;
-    template?: string;
-  }>;
+  requests: Array<ContentRequest>;
   batchId?: string;
 }
 
@@ -20,7 +22,7 @@ interface BulkContentResponse {
   results: Array<{
     index: number;
     success: boolean;
-    data?: any;
+    data?: GeneratedContent;
     error?: string;
   }>;
 }
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
     const results: Array<{
       index: number;
       success: boolean;
-      data?: any;
+      data?: GeneratedContent;
       error?: string;
     }> = [];
 
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Process requests in parallel with concurrency limit
     const CONCURRENCY_LIMIT = 5;
-    const processRequest = async (req: any, index: number) => {
+    const processRequest = async (req: ContentRequest, index: number) => {
       try {
         // Validate individual request
         if (!req.topic || !req.contentType || !req.platform) {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calculator, TrendingUp, DollarSign, Home, Percent, BarChart3 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Calculator, TrendingUp, DollarSign, Home, BarChart3 } from 'lucide-react';
 
 interface ROICalculation {
   monthlyRentalIncome: number;
@@ -55,11 +55,7 @@ const ROICalculator = () => {
     propertyTaxRate: 2.0
   };
 
-  useEffect(() => {
-    calculateROI();
-  }, [inputs]);
-
-  const calculateROI = () => {
+  const calculateROI = useCallback(() => {
     const {
       purchasePrice,
       downPayment,
@@ -120,7 +116,11 @@ const ROICalculator = () => {
       breakEvenMonths,
       fiveYearProjection
     });
-  };
+  }, [inputs]);
+
+  useEffect(() => {
+    calculateROI();
+  }, [calculateROI]);
 
   const updateInput = (field: keyof PropertyInputs, value: number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -449,8 +449,8 @@ const ROICalculator = () => {
                   <div className="mt-4 p-3 bg-purple-500/10 rounded-lg">
                     <p className="text-purple-200 text-xs">
                       💡 <strong>Houston Insight:</strong> Properties with {formatPercent(calculation.capRate)} cap rate 
-                      are {calculation.capRate > 7 ? 'above' : 'below'} Houston's average market performance. 
-                      Consider Houston's {houstonMarketData.averageAppreciation}% historical appreciation rate.
+                      are {calculation.capRate > 7 ? 'above' : 'below'} Houston&apos;s average market performance. 
+                      Consider Houston&apos;s {houstonMarketData.averageAppreciation}% historical appreciation rate.
                     </p>
                   </div>
                 </div>
