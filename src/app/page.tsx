@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Copy, Save, RefreshCw, TrendingUp, Users, Sparkles, Download, Trash2, Search, Star, Calendar, BarChart3, Target, Zap, Award, DollarSign, Building2, Plus, Eye, Calculator } from 'lucide-react';
 import ROICalculator from '@/components/ROICalculator';
 import PropertyComparison from '@/components/PropertyComparison';
+import EnhancedDocumentGenerator from '@/components/EnhancedDocumentGenerator';
 
 interface ContentItem {
   id: string;
@@ -1569,108 +1570,7 @@ export default function Home() {
 
              {/* Documents Tab */}
              {activeTab === 'documents' && (
-               <div className="bg-black/30 backdrop-blur-xl border border-orange-500/20 rounded-2xl p-8 shadow-2xl">
-                 <div className="flex justify-between items-center mb-8">
-                   <div>
-                     <h2 className="text-2xl font-bold text-white">Document Generation</h2>
-                     <p className="text-orange-300">Create professional PDF reports and brochures</p>
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                   <div className="space-y-6">
-                     <div>
-                       <label className="block text-sm font-semibold text-orange-300 mb-3">Document Title</label>
-                       <input
-                         type="text"
-                         value={documentTitle}
-                         onChange={(e) => setDocumentTitle(e.target.value)}
-                         placeholder="Enter document title..."
-                         className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white placeholder-orange-400/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                       />
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div>
-                         <label className="block text-sm font-semibold text-orange-300 mb-3">Document Type</label>
-                         <select
-                           value={documentType}
-                           onChange={(e) => setDocumentType(e.target.value)}
-                           className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                         >
-                           <option value="market_report" className="bg-slate-800">📊 Market Report</option>
-                           <option value="property_brochure" className="bg-slate-800">🏠 Property Brochure</option>
-                           <option value="investment_analysis" className="bg-slate-800">💰 Investment Analysis</option>
-                           <option value="marketing_flyer" className="bg-slate-800">📄 Marketing Flyer</option>
-                         </select>
-                       </div>
-
-                       <div>
-                         <label className="block text-sm font-semibold text-orange-300 mb-3">Houston Area</label>
-                         <input
-                           type="text"
-                           value={houstonArea}
-                           onChange={(e) => setHoustonArea(e.target.value)}
-                           placeholder="e.g., The Woodlands, Houston Heights..."
-                           className="w-full px-6 py-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-white placeholder-orange-400/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                         />
-                       </div>
-                     </div>
-
-                     <div className="flex items-center space-x-3">
-                       <input
-                         type="checkbox"
-                         id="includeCharts"
-                         checked={includeCharts}
-                         onChange={(e) => setIncludeCharts(e.target.checked)}
-                         className="w-5 h-5 text-orange-400 bg-orange-900/20 border-orange-500/30 rounded focus:ring-orange-400"
-                       />
-                       <label htmlFor="includeCharts" className="text-orange-300 font-medium">
-                         Include financial charts and graphs
-                       </label>
-                     </div>
-
-                     <button
-                       onClick={handleDocumentGenerate}
-                       disabled={!documentTitle || isGenerating}
-                       className="w-full text-white py-4 px-8 rounded-xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 hover:from-orange-600 hover:via-red-600 hover:to-orange-700"
-                     >
-                       {isGenerating ? (
-                         <>
-                           <RefreshCw className="w-6 h-6 animate-spin" />
-                           <span>Generating Professional Document...</span>
-                         </>
-                       ) : (
-                         <>
-                           <Download className="w-6 h-6" />
-                           <span>Generate Premium Document</span>
-                         </>
-                       )}
-                     </button>
-                   </div>
-
-                   {generatedDocument && (
-                     <div className="bg-orange-900/20 rounded-xl p-6 border border-orange-500/30">
-                       <h3 className="text-xl font-bold text-white mb-4">Generated Document</h3>
-                       <div className="space-y-4">
-                         <div className="bg-slate-900/50 rounded-lg p-4">
-                           <p className="text-orange-300 font-medium">{generatedDocument.title}</p>
-                           <p className="text-slate-400 text-sm">{generatedDocument.type}</p>
-                         </div>
-                         <div className="flex space-x-3">
-                           <button 
-                             onClick={() => window.open(generatedDocument.url, '_blank')}
-                             className="flex-1 px-4 py-2 bg-orange-500/20 text-orange-300 rounded-xl hover:bg-orange-500/30 border border-orange-400/30 flex items-center justify-center space-x-2 transition-all duration-200"
-                           >
-                             <Download className="w-4 h-4" />
-                             <span>Download PDF</span>
-                           </button>
-                         </div>
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               </div>
+               <EnhancedDocumentGenerator />
              )}
 
              {/* Videos Tab */}
