@@ -23,6 +23,19 @@ interface ContentItem {
   leads?: number;
 }
 
+interface ScheduledPost {
+  id: string;
+  title: string;
+  content: string;
+  platform: string;
+  date: string;
+  time: string;
+  status: 'scheduled' | 'posted' | 'draft';
+  mediaType?: 'image' | 'video' | null;
+  mediaPreview?: string | null;
+  mediaFileName?: string | null;
+}
+
 interface Template {
   id: string;
   name: string;
@@ -126,17 +139,23 @@ export default function Home() {
     content: '',
     platform: 'instagram',
     time: '14:00',
-    contentType: 'post'
+    contentType: 'post',
+    mediaFile: null as File | null,
+    mediaPreview: null as string | null,
+    mediaType: null as 'image' | 'video' | null
   });
-  const [scheduledPosts, setScheduledPosts] = useState([
+  const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([
     {
       id: '1',
       title: 'Houston Heights Market Update',
-      content: 'Exploring the latest market trends in Houston Heights...',
+      content: 'Exploring the latest market trends in Houston Heights with stunning neighborhood photos and market data visualizations.',
       platform: 'instagram',
       date: '2024-12-19',
       time: '14:00',
-      status: 'scheduled'
+      status: 'scheduled',
+      mediaType: 'image',
+      mediaPreview: '/api/placeholder/400/300',
+      mediaFileName: 'houston-heights-market.jpg'
     },
     {
       id: '2',
@@ -145,16 +164,22 @@ export default function Home() {
       platform: 'linkedin',
       date: '2024-12-20',
       time: '09:00',
-      status: 'scheduled'
+      status: 'scheduled',
+      mediaType: null,
+      mediaPreview: null,
+      mediaFileName: null
     },
     {
       id: '3',
       title: 'Weekly Market Report',
-      content: 'Comprehensive weekly market analysis for Houston real estate...',
+      content: 'Comprehensive weekly market analysis for Houston real estate with video walkthrough of trending neighborhoods.',
       platform: 'all',
       date: '2024-12-22',
       time: '10:00',
-      status: 'scheduled'
+      status: 'scheduled',
+      mediaType: 'video',
+      mediaPreview: '/api/placeholder/400/300',
+      mediaFileName: 'market-report-video.mp4'
     }
   ]);
 
@@ -698,17 +723,29 @@ export default function Home() {
       platform: scheduleForm.platform,
       date: selectedDate,
       time: scheduleForm.time,
-      status: 'scheduled' as const
+      status: 'scheduled' as const,
+      mediaPreview: scheduleForm.mediaPreview,
+      mediaType: scheduleForm.mediaType,
+      mediaFileName: scheduleForm.mediaFile?.name || null
     };
     
     setScheduledPosts(prev => [...prev, newPost]);
+    
+    // Clean up media preview URL
+    if (scheduleForm.mediaPreview) {
+      URL.revokeObjectURL(scheduleForm.mediaPreview);
+    }
+    
     setShowScheduleModal(false);
     setScheduleForm({
       title: '',
       content: '',
       platform: 'instagram',
       time: '14:00',
-      contentType: 'post'
+      contentType: 'post',
+      mediaFile: null,
+      mediaPreview: null,
+      mediaType: null
     });
     setSelectedDate(null);
   };
@@ -721,7 +758,10 @@ export default function Home() {
         content: post.content,
         platform: post.platform,
         time: post.time,
-        contentType: 'post'
+        contentType: 'post',
+        mediaFile: null,
+        mediaPreview: post.mediaPreview || null,
+        mediaType: post.mediaType || null
       });
       setShowViewModal(true);
     }
@@ -737,6 +777,52 @@ export default function Home() {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(day));
     const dateStr = targetDate.toISOString().split('T')[0];
     return scheduledPosts.filter(post => post.date === dateStr);
+  };
+
+  // Media handling functions
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const validVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/webm'];
+    
+    if (!validImageTypes.includes(file.type) && !validVideoTypes.includes(file.type)) {
+      alert('Please select a valid image (JPEG, PNG, GIF, WebP) or video (MP4, MOV, AVI, WebM) file.');
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      alert('File size must be less than 50MB.');
+      return;
+    }
+
+    const mediaType = validImageTypes.includes(file.type) ? 'image' : 'video';
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    
+    setScheduleForm(prev => ({
+      ...prev,
+      mediaFile: file,
+      mediaPreview: previewUrl,
+      mediaType: mediaType
+    }));
+  };
+
+  const removeMedia = () => {
+    if (scheduleForm.mediaPreview) {
+      URL.revokeObjectURL(scheduleForm.mediaPreview);
+    }
+    setScheduleForm(prev => ({
+      ...prev,
+      mediaFile: null,
+      mediaPreview: null,
+      mediaType: null
+    }));
   };
 
   return (
@@ -1491,7 +1577,15 @@ export default function Home() {
                            'bg-purple-500/10 border-purple-500/20'
                          }`}>
                            <div>
-                             <h4 className="text-white font-medium">{post.title}</h4>
+                             <div className="flex items-center space-x-2">
+                               <h4 className="text-white font-medium">{post.title}</h4>
+                               {post.mediaType && (
+                                 <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded flex items-center space-x-1">
+                                   {post.mediaType === 'image' ? '🖼️' : '🎥'}
+                                   <span>{post.mediaType}</span>
+                                 </span>
+                               )}
+                             </div>
                              <p className={`text-sm ${
                                index === 0 ? 'text-blue-300' :
                                index === 1 ? 'text-green-300' :
@@ -2179,6 +2273,65 @@ export default function Home() {
                   </div>
                 </div>
                 
+                {/* Media Upload Section */}
+                <div>
+                  <label className="block text-purple-300 text-sm font-medium mb-2">Media (Optional)</label>
+                  <div className="space-y-3">
+                    {!scheduleForm.mediaPreview ? (
+                      <div className="border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-purple-500 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="media-upload"
+                        />
+                        <label htmlFor="media-upload" className="cursor-pointer">
+                          <div className="space-y-2">
+                            <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center mx-auto">
+                              <Plus className="w-6 h-6 text-slate-400" />
+                            </div>
+                            <p className="text-slate-300 font-medium">Upload Image or Video</p>
+                            <p className="text-slate-500 text-xs">JPEG, PNG, GIF, WebP, MP4, MOV, AVI, WebM (max 50MB)</p>
+                          </div>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="relative bg-slate-800 rounded-xl p-4 border border-slate-700">
+                        <button
+                          onClick={removeMedia}
+                          className="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-full p-1 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        
+                        {scheduleForm.mediaType === 'image' ? (
+                          <img
+                            src={scheduleForm.mediaPreview}
+                            alt="Preview"
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <video
+                            src={scheduleForm.mediaPreview}
+                            className="w-full h-48 object-cover rounded-lg"
+                            controls
+                          />
+                        )}
+                        
+                        <div className="mt-2 flex items-center justify-between">
+                          <p className="text-slate-300 text-sm truncate">
+                            {scheduleForm.mediaFile?.name}
+                          </p>
+                          <span className="text-xs text-purple-300 bg-purple-500/20 px-2 py-1 rounded">
+                            {scheduleForm.mediaType?.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 {selectedDate && (
                   <p className="text-purple-300 text-sm">
                     Scheduled for: {new Date(selectedDate).toLocaleDateString()}
@@ -2202,7 +2355,10 @@ export default function Home() {
                       content: '',
                       platform: 'instagram',
                       time: '14:00',
-                      contentType: 'post'
+                      contentType: 'post',
+                      mediaFile: null,
+                      mediaPreview: null,
+                      mediaType: null
                     });
                   }}
                   className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors"
@@ -2230,6 +2386,33 @@ export default function Home() {
                   <label className="block text-blue-300 text-sm font-medium mb-2">Content</label>
                   <p className="text-white bg-slate-800 px-4 py-2 rounded-xl max-h-32 overflow-y-auto">{scheduleForm.content}</p>
                 </div>
+                
+                {/* Media Preview in View Modal */}
+                {scheduleForm.mediaPreview && (
+                  <div>
+                    <label className="block text-blue-300 text-sm font-medium mb-2">Media</label>
+                    <div className="bg-slate-800 rounded-xl p-4">
+                      {scheduleForm.mediaType === 'image' ? (
+                        <img
+                          src={scheduleForm.mediaPreview}
+                          alt="Scheduled media"
+                          className="w-full h-48 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <video
+                          src={scheduleForm.mediaPreview}
+                          className="w-full h-48 object-cover rounded-lg"
+                          controls
+                        />
+                      )}
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-xs text-blue-300 bg-blue-500/20 px-2 py-1 rounded">
+                          {scheduleForm.mediaType?.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
