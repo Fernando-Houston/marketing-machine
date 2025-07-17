@@ -105,16 +105,59 @@ interface GeneratedVideo {
 }
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState('generate');
   const [topic, setTopic] = useState('');
   const [contentType, setContentType] = useState('');
   const [platform, setPlatform] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<ContentItem | null>(null);
   const [contentHistory, setContentHistory] = useState<ContentItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlatform, setFilterPlatform] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [activeTab, setActiveTab] = useState('generate');
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // Calendar state management
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState({
+    title: '',
+    content: '',
+    platform: 'instagram',
+    time: '14:00',
+    contentType: 'post'
+  });
+  const [scheduledPosts, setScheduledPosts] = useState([
+    {
+      id: '1',
+      title: 'Houston Heights Market Update',
+      content: 'Exploring the latest market trends in Houston Heights...',
+      platform: 'instagram',
+      date: '2024-12-19',
+      time: '14:00',
+      status: 'scheduled'
+    },
+    {
+      id: '2',
+      title: 'Energy Corridor Investment Analysis',
+      content: 'Deep dive into Energy Corridor investment opportunities...',
+      platform: 'linkedin',
+      date: '2024-12-20',
+      time: '09:00',
+      status: 'scheduled'
+    },
+    {
+      id: '3',
+      title: 'Weekly Market Report',
+      content: 'Comprehensive weekly market analysis for Houston real estate...',
+      platform: 'all',
+      date: '2024-12-22',
+      time: '10:00',
+      status: 'scheduled'
+    }
+  ]);
+
   const [showImageGen, setShowImageGen] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
@@ -630,6 +673,70 @@ export default function Home() {
       case 'scheduled': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const deleteFromHistory = (id: string) => {
+    setContentHistory(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Calendar functions
+  const handleDateClick = (day: string) => {
+    if (!day) return;
+    const currentDate = new Date();
+    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(day));
+    setSelectedDate(selectedDate.toISOString().split('T')[0]);
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleContent = () => {
+    if (!selectedDate || !scheduleForm.title || !scheduleForm.content) return;
+    
+    const newPost = {
+      id: crypto.randomUUID(),
+      title: scheduleForm.title,
+      content: scheduleForm.content,
+      platform: scheduleForm.platform,
+      date: selectedDate,
+      time: scheduleForm.time,
+      status: 'scheduled' as const
+    };
+    
+    setScheduledPosts(prev => [...prev, newPost]);
+    setShowScheduleModal(false);
+    setScheduleForm({
+      title: '',
+      content: '',
+      platform: 'instagram',
+      time: '14:00',
+      contentType: 'post'
+    });
+    setSelectedDate(null);
+  };
+
+  const handleViewPost = (postId: string) => {
+    const post = scheduledPosts.find(p => p.id === postId);
+    if (post) {
+      setScheduleForm({
+        title: post.title,
+        content: post.content,
+        platform: post.platform,
+        time: post.time,
+        contentType: 'post'
+      });
+      setShowViewModal(true);
+    }
+  };
+
+  const handleDeletePost = (postId: string) => {
+    setScheduledPosts(prev => prev.filter(p => p.id !== postId));
+  };
+
+  const getPostsForDate = (day: string) => {
+    if (!day) return [];
+    const currentDate = new Date();
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(day));
+    const dateStr = targetDate.toISOString().split('T')[0];
+    return scheduledPosts.filter(post => post.date === dateStr);
   };
 
   return (
@@ -1311,11 +1418,17 @@ export default function Home() {
                        <p className="text-purple-300">Plan and schedule your Houston real estate content</p>
                      </div>
                      <div className="flex space-x-3">
-                       <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200">
+                       <button 
+                         onClick={() => setShowScheduleModal(true)}
+                         className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200"
+                       >
                          <Plus className="w-4 h-4" />
                          <span>Schedule Content</span>
                        </button>
-                       <button className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-xl hover:bg-blue-500/30 border border-blue-400/30 flex items-center space-x-2 transition-all duration-200">
+                       <button 
+                         onClick={() => setShowViewModal(true)}
+                         className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-xl hover:bg-blue-500/30 border border-blue-400/30 flex items-center space-x-2 transition-all duration-200"
+                       >
                          <Calendar className="w-4 h-4" />
                          <span>View Calendar</span>
                        </button>
@@ -1330,16 +1443,18 @@ export default function Home() {
                        </div>
                      ))}
                      
-                     {/* Sample calendar days */}
+                     {/* Calendar days */}
                      {Array.from({ length: 35 }, (_, i) => {
                        const day = i < 3 ? '' : (i - 2).toString();
                        const today = new Date().getDate();
                        const isToday = day === today.toString();
-                       const hasContent = [5, 12, 18, 25].includes(Number(day));
+                       const postsForDay = getPostsForDate(day);
+                       const hasContent = postsForDay.length > 0;
                        
                        return (
                          <div
                            key={i}
+                           onClick={() => handleDateClick(day)}
                            className={`min-h-[80px] p-2 rounded-lg border transition-all duration-200 ${
                              day
                                ? isToday
@@ -1353,18 +1468,11 @@ export default function Home() {
                            {day && (
                              <div>
                                <div className={`text-sm mb-1 ${isToday ? 'font-bold' : ''}`}>{day}</div>
-                               {hasContent && (
-                                 <div className="space-y-1">
-                                   <div className="text-xs bg-blue-400/20 text-blue-300 px-2 py-1 rounded">
-                                     Market Update
-                                   </div>
-                                   {Number(day) === 18 && (
-                                     <div className="text-xs bg-green-400/20 text-green-300 px-2 py-1 rounded">
-                                       Investment Tip
-                                     </div>
-                                   )}
+                               {postsForDay.map((post, idx) => (
+                                 <div key={idx} className="text-xs bg-blue-400/20 text-blue-300 px-2 py-1 rounded mb-1 truncate">
+                                   {post.title}
                                  </div>
-                               )}
+                               ))}
                              </div>
                            )}
                          </div>
@@ -1376,50 +1484,42 @@ export default function Home() {
                    <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
                      <h3 className="text-lg font-semibold text-white mb-4">Upcoming Scheduled Content</h3>
                      <div className="space-y-3">
-                       <div className="flex items-center justify-between p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                         <div>
-                           <h4 className="text-white font-medium">Houston Heights Market Update</h4>
-                           <p className="text-blue-300 text-sm">Instagram • Today at 2:00 PM</p>
+                       {scheduledPosts.map((post, index) => (
+                         <div key={post.id} className={`flex items-center justify-between p-4 rounded-lg border ${
+                           index === 0 ? 'bg-blue-500/10 border-blue-500/20' :
+                           index === 1 ? 'bg-green-500/10 border-green-500/20' :
+                           'bg-purple-500/10 border-purple-500/20'
+                         }`}>
+                           <div>
+                             <h4 className="text-white font-medium">{post.title}</h4>
+                             <p className={`text-sm ${
+                               index === 0 ? 'text-blue-300' :
+                               index === 1 ? 'text-green-300' :
+                               'text-purple-300'
+                             }`}>
+                               {post.platform === 'all' ? 'All Platforms' : post.platform} • {post.date} at {post.time}
+                             </p>
+                           </div>
+                           <div className="flex space-x-2">
+                             <button 
+                               onClick={() => handleViewPost(post.id)}
+                               className={`hover:text-white transition-colors ${
+                                 index === 0 ? 'text-blue-400 hover:text-blue-300' :
+                                 index === 1 ? 'text-green-400 hover:text-green-300' :
+                                 'text-purple-400 hover:text-purple-300'
+                               }`}
+                             >
+                               <Eye className="w-4 h-4" />
+                             </button>
+                             <button 
+                               onClick={() => handleDeletePost(post.id)}
+                               className="text-slate-400 hover:text-red-400 transition-colors"
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </button>
+                           </div>
                          </div>
-                         <div className="flex space-x-2">
-                           <button className="text-blue-400 hover:text-blue-300 transition-colors">
-                             <Eye className="w-4 h-4" />
-                           </button>
-                           <button className="text-slate-400 hover:text-white transition-colors">
-                             <RefreshCw className="w-4 h-4" />
-                           </button>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center justify-between p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                         <div>
-                           <h4 className="text-white font-medium">Energy Corridor Investment Analysis</h4>
-                           <p className="text-green-300 text-sm">LinkedIn • Tomorrow at 9:00 AM</p>
-                         </div>
-                         <div className="flex space-x-2">
-                           <button className="text-green-400 hover:text-green-300 transition-colors">
-                             <Eye className="w-4 h-4" />
-                           </button>
-                           <button className="text-slate-400 hover:text-white transition-colors">
-                             <RefreshCw className="w-4 h-4" />
-                           </button>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center justify-between p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                         <div>
-                           <h4 className="text-white font-medium">Weekly Market Report</h4>
-                           <p className="text-purple-300 text-sm">All Platforms • Friday at 10:00 AM</p>
-                         </div>
-                         <div className="flex space-x-2">
-                           <button className="text-purple-400 hover:text-purple-300 transition-colors">
-                             <Eye className="w-4 h-4" />
-                           </button>
-                           <button className="text-slate-400 hover:text-white transition-colors">
-                             <RefreshCw className="w-4 h-4" />
-                           </button>
-                         </div>
-                       </div>
+                       ))}
                      </div>
                    </div>
 
@@ -1429,7 +1529,7 @@ export default function Home() {
                        <div className="flex items-center justify-between mb-4">
                          <div>
                            <p className="text-blue-300 text-sm font-medium">Scheduled Posts</p>
-                           <p className="text-2xl font-bold text-white">12</p>
+                           <p className="text-2xl font-bold text-white">{scheduledPosts.length}</p>
                          </div>
                          <Calendar className="w-8 h-8 text-blue-400" />
                        </div>
@@ -1926,30 +2026,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Calendar Dashboard - Enhanced */}
-            {activeTab === 'calendar' && (
-              <div className="bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Content Calendar</h2>
-                    <p className="text-purple-300">Schedule and plan your Houston real estate content</p>
-                  </div>
-                  <div className="flex space-x-3">
-                    <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl hover:bg-purple-500/30 border border-purple-400/30 flex items-center space-x-2 transition-all duration-200">
-                      <Plus className="w-4 h-4" />
-                      <span>Schedule Content</span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="text-center py-16">
-                  <Calendar className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">Content Calendar Coming Soon</h3>
-                  <p className="text-purple-300 mb-4">Advanced scheduling and planning features</p>
-                  <p className="text-slate-400 text-sm">• Automated posting schedules<br/>• Content performance tracking<br/>• Houston market timing optimization</p>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* Premium Sidebar - 1/3 width */}
@@ -2045,6 +2122,139 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Schedule Content Modal */}
+        {showScheduleModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-purple-500/20 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-6">Schedule New Content</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-purple-300 text-sm font-medium mb-2">Content Title</label>
+                  <input
+                    type="text"
+                    value={scheduleForm.title}
+                    onChange={(e) => setScheduleForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                    placeholder="Enter content title..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-300 text-sm font-medium mb-2">Content</label>
+                  <textarea
+                    value={scheduleForm.content}
+                    onChange={(e) => setScheduleForm(prev => ({ ...prev, content: e.target.value }))}
+                    rows={3}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                    placeholder="Enter your content..."
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-purple-300 text-sm font-medium mb-2">Platform</label>
+                    <select
+                      value={scheduleForm.platform}
+                      onChange={(e) => setScheduleForm(prev => ({ ...prev, platform: e.target.value }))}
+                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="twitter">Twitter</option>
+                      <option value="all">All Platforms</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-purple-300 text-sm font-medium mb-2">Time</label>
+                    <input
+                      type="time"
+                      value={scheduleForm.time}
+                      onChange={(e) => setScheduleForm(prev => ({ ...prev, time: e.target.value }))}
+                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+                
+                {selectedDate && (
+                  <p className="text-purple-300 text-sm">
+                    Scheduled for: {new Date(selectedDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={handleScheduleContent}
+                  className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-xl transition-colors"
+                >
+                  Schedule Content
+                </button>
+                <button
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    setSelectedDate(null);
+                    setScheduleForm({
+                      title: '',
+                      content: '',
+                      platform: 'instagram',
+                      time: '14:00',
+                      contentType: 'post'
+                    });
+                  }}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Content Modal */}
+        {showViewModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-blue-500/20 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-6">Content Details</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-blue-300 text-sm font-medium mb-2">Title</label>
+                  <p className="text-white bg-slate-800 px-4 py-2 rounded-xl">{scheduleForm.title}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-blue-300 text-sm font-medium mb-2">Content</label>
+                  <p className="text-white bg-slate-800 px-4 py-2 rounded-xl max-h-32 overflow-y-auto">{scheduleForm.content}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-blue-300 text-sm font-medium mb-2">Platform</label>
+                    <p className="text-white bg-slate-800 px-4 py-2 rounded-xl capitalize">{scheduleForm.platform}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-blue-300 text-sm font-medium mb-2">Time</label>
+                    <p className="text-white bg-slate-800 px-4 py-2 rounded-xl">{scheduleForm.time}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
